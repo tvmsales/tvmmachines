@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TVM Machines - Reactive Pivot Dashboard</title>
+    <title>TVM-MACHINES | Final Pivot Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
-        /* [cite: 10-328] All your original styling is preserved here */
+        /* [cite: 720-1037] Styles are fully preserved from your source */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); color: white; padding: 20px; }
         .header { background: rgba(99, 102, 241, 0.15); padding: 25px; border-radius: 20px; border: 1px solid rgba(139, 92, 246, 0.3); backdrop-filter: blur(10px); margin-bottom: 30px; }
-        .filters-section { background: rgba(99, 102, 241, 0.1); padding: 25px; border-radius: 20px; margin-bottom: 30px; border: 1px solid rgba(139, 92, 246, 0.2); }
-        .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .filters-section { background: rgba(99, 102, 241, 0.1); padding: 25px; border-radius: 20px; margin-bottom: 30px; border: 1px solid rgba(139, 92, 246, 0.2); z-index: 1000; position: relative; }
+        .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .multi-select-wrapper { position: relative; }
-        .multi-select-button { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.3); background: rgba(30, 27, 75, 0.6); color: white; cursor: pointer; display: flex; justify-content: space-between; }
-        .multi-select-dropdown { display: none; position: absolute; top: 110%; left: 0; right: 0; background: #1a1535; border: 2px solid #8b5cf6; border-radius: 12px; max-height: 300px; overflow-y: auto; z-index: 9999; }
+        .multi-select-button { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid rgba(139, 92, 246, 0.3); background: rgba(30, 27, 75, 0.6); color: white; cursor: pointer; display: flex; justify-content: space-between; }
+        .multi-select-dropdown { display: none; position: absolute; top: 110%; left: 0; right: 0; background: #1a1535; border: 2px solid #8b5cf6; border-radius: 12px; max-height: 300px; overflow-y: auto; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .multi-select-dropdown.show { display: block; }
         .option { padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .kpi-card { padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .kpi-card { padding: 20px; border-radius: 20px; text-align: center; border: 2px solid rgba(255,255,255,0.1); }
         .kpi-card.blue { background: linear-gradient(135deg, #667eea, #764ba2); }
         .kpi-card.green { background: linear-gradient(135deg, #56ab2f, #a8e063); }
         .kpi-card.purple { background: linear-gradient(135deg, #d53369, #daae51); }
@@ -27,24 +27,24 @@
         .kpi-value { font-size: 2.2em; font-weight: 800; }
         .charts-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 25px; }
         .chart-card { background: rgba(99, 102, 241, 0.05); padding: 25px; border-radius: 20px; border: 1px solid rgba(139, 92, 246, 0.2); }
-        .chart-title { color: #c4b5fd; margin-bottom: 20px; font-weight: 600; }
+        .chart-title { color: #c4b5fd; margin-bottom: 20px; font-weight: 600; font-size: 1.1em; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>TVM-MACHINES Pivot Analytics</h1>
-        <div style="color: #a78bfa;">Designed by Prasad K • Grand Total Excluded</div>
+        <p style="color: #a78bfa;">Designed by Prasad K • Real-Time Dynamic Updates</p>
     </div>
 
     <div class="filters-section">
         <div class="filters-grid">
             <div class="multi-select-wrapper">
-                <label>Branch</label>
+                <label style="display:block; margin-bottom:8px;">Branch</label>
                 <button class="multi-select-button" onclick="toggleDrop('branch')"><span id="branchBtn">All Selected</span><span>▼</span></button>
                 <div id="branchDrop" class="multi-select-dropdown"></div>
             </div>
             <div class="multi-select-wrapper">
-                <label>Machine Name</label>
+                <label style="display:block; margin-bottom:8px;">Machine Name</label>
                 <button class="multi-select-button" onclick="toggleDrop('machine')"><span id="machineBtn">All Selected</span><span>▼</span></button>
                 <div id="machineDrop" class="multi-select-dropdown"></div>
             </div>
@@ -62,33 +62,33 @@
         <div class="chart-card"><div class="chart-title">Pivot 1: Machine Models by Branch</div><canvas id="c1"></canvas></div>
         <div class="chart-card"><div class="chart-title">Pivot 2: Customer Performance [Branch]</div><canvas id="c2"></canvas></div>
         <div class="chart-card"><div class="chart-title">Pivot 3: Vertical (Type x Month)</div><canvas id="c3"></canvas></div>
-        <div class="chart-card"><div class="chart-title">Pivot 4: Flow (Dispatch vs Installation)</div><canvas id="c4"></canvas></div>
+        <div class="chart-card"><div class="chart-title">Pivot 4: Installation Status (Flow)</div><canvas id="c4"></canvas></div>
     </div>
 
     <script>
-        let raw = [], filtered = [], charts = {}, activeFilters = { branch: [], machine: [] };
+        let rawData = [], filteredData = [], charts = {}, activeFilters = { branch: [], machine: [] };
 
-        async function start() {
+        async function init() {
             const res = await fetch('https://raw.githubusercontent.com/tvmsales/tvmmachines/main/TVMMACHINES.csv');
             const txt = await res.text();
             Papa.parse(txt, {
                 header: true, skipEmptyLines: true,
                 complete: function(r) {
-                    // CRITICAL: Filter out "Grand Total" immediately upon loading 
-                    raw = r.data.filter(row => row.branch && row.branch !== "Grand Total");
-                    filtered = [...raw];
-                    initFilters();
-                    refresh();
+                    // THE FIX: Remove "Grand Total" immediately 
+                    rawData = r.data.filter(row => row.branch && row.branch.trim() !== "" && row.branch !== "Grand Total");
+                    filteredData = [...rawData];
+                    setupFilters();
+                    refreshUI();
                 }
             });
         }
 
-        function initFilters() {
-            const setup = (id, key) => {
-                const vals = [...new Set(raw.map(x => x[key]).filter(Boolean))].sort();
+        function setupFilters() {
+            const populate = (id, key) => {
+                const uniqueVals = [...new Set(rawData.map(x => x[key]).filter(Boolean))].sort();
                 const container = document.getElementById(id + 'Drop');
                 container.innerHTML = '';
-                vals.forEach(v => {
+                uniqueVals.forEach(v => {
                     activeFilters[id].push(v);
                     const div = document.createElement('div');
                     div.className = 'option';
@@ -96,8 +96,8 @@
                     container.appendChild(div);
                 });
             };
-            setup('branch', 'branch');
-            setup('machine', 'im_descr');
+            populate('branch', 'branch');
+            populate('machine', 'im_descr');
         }
 
         function sync(id) {
@@ -105,41 +105,46 @@
             activeFilters[id] = selected;
             document.getElementById(id + 'Btn').innerText = selected.length + " Selected";
             
-            // Filter global data [cite: 561]
-            filtered = raw.filter(row => activeFilters.branch.includes(row.branch) && activeFilters.machine.includes(row.im_descr));
-            refresh();
+            // Re-filter the global data [cite: 1271]
+            filteredData = rawData.filter(row => 
+                activeFilters.branch.includes(row.branch) && 
+                activeFilters.machine.includes(row.im_descr)
+            );
+            refreshUI();
         }
 
         function toggleDrop(id) {
             document.getElementById(id + 'Drop').classList.toggle('show');
         }
 
-        function refresh() {
-            // Update KPIs [cite: 575]
-            document.getElementById('k1').innerText = filtered.length;
+        function refreshUI() {
+            // Update KPIs [cite: 1285]
+            document.getElementById('k1').innerText = filteredData.length;
             let inst = 0, demo = 0;
-            filtered.forEach(r => {
+            filteredData.forEach(r => {
                 inst += parseFloat(r.installation || 0);
                 demo += parseFloat(r.demo || 0);
             });
             document.getElementById('k2').innerText = Math.round(inst);
             document.getElementById('k3').innerText = Math.round(demo);
-            document.getElementById('k4').innerText = Math.max(0, filtered.length - Math.round(inst));
+            document.getElementById('k4').innerText = Math.max(0, filteredData.length - Math.round(inst));
 
-            // Update All 4 Pivots [cite: 593, 594, 595, 596]
-            drawPivot('c1', r => `${r.im_descr} | ${r.branch}`, 'bar', '#667eea');
-            drawPivot('c2', r => `${r.party_name} (${r.branch})`, 'bar', '#a855f7');
-            drawPivot('c3', r => `${r.customer_type} - ${r['Dispatch month']}`, 'line', '#f5576c');
-            drawPivot('c4', r => `${r['Dispatch month']} ➔ ${r.installation_month || 'N/A'}`, 'bar', '#a8e063');
+            // Update All 4 Pivot Charts [cite: 1302]
+            updatePivot('c1', r => `${r.im_descr} | ${r.branch}`, 'bar', '#667eea');
+            updatePivot('c2', r => `${r.party_name} (${r.branch})`, 'bar', '#a855f7');
+            updatePivot('chart3', r => `${r.customer_type} - ${r['Dispatch month']}`, 'line', '#f5576c');
+            updatePivot('c4', r => `Disp: ${r['Dispatch month']} ➔ Inst: ${r.installation_month || 'N/A'}`, 'bar', '#a8e063');
         }
 
-        function drawPivot(canvasId, keyFn, type, color) {
+        function updatePivot(canvasId, keyFn, type, color) {
             const counts = {};
-            filtered.forEach(row => { const k = keyFn(row); counts[k] = (counts[k] || 0) + 1; });
+            filteredData.forEach(row => { const k = keyFn(row); counts[k] = (counts[k] || 0) + 1; });
             const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
             
-            const ctx = document.getElementById(canvasId).getContext('2d');
+            const target = document.getElementById(canvasId === 'chart3' ? 'c3' : canvasId);
+            const ctx = target.getContext('2d');
             if(charts[canvasId]) charts[canvasId].destroy();
+            
             charts[canvasId] = new Chart(ctx, {
                 type: type,
                 data: {
@@ -163,7 +168,15 @@
                 }
             });
         }
-        start();
+
+        // Close dropdowns on outside click [cite: 1411]
+        window.onclick = (e) => {
+            if(!e.target.closest('.multi-select-wrapper')) {
+                document.querySelectorAll('.multi-select-dropdown').forEach(d => d.classList.remove('show'));
+            }
+        };
+
+        init();
     </script>
 </body>
 </html>
