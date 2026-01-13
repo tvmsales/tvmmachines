@@ -360,11 +360,6 @@
             font-weight: 600;
         }
 
-        .pivot-table tbody tr.subtotal-row {
-            background: rgba(139, 92, 246, 0.2);
-            font-weight: 500;
-        }
-
         .pivot-table .number-cell {
             text-align: right;
             font-weight: 600;
@@ -635,7 +630,7 @@
                     dynamicTyping: false,
                     skipEmptyLines: true,
                     complete: function(results) {
-                        allData = results.data.filter(row => row.branch);
+                        allData = results.data.filter(row => row.branch && row.branch.toLowerCase() !== 'grand total');
                         filteredData = [...allData];
                         initializeFilters();
                         updateDashboard();
@@ -793,3 +788,7 @@
                 countCell.textContent = count.toLocaleString();
                 countCell.className = 'number-cell';
             });
+
+            const totalRow = tbody.insertRow();
+            totalRow.className = 'total-row';
+            total
