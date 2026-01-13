@@ -586,11 +586,25 @@
 
         function toggleDropdown(filterId) {
             const dropdown = document.getElementById(`${filterId}Dropdown`);
+            const wrapper = dropdown.closest('.multi-select-wrapper');
             const allDropdowns = document.querySelectorAll('.multi-select-dropdown');
+            const allWrappers = document.querySelectorAll('.multi-select-wrapper');
+            
+            // Remove active class from all wrappers
+            allWrappers.forEach(w => w.classList.remove('active'));
+            
+            // Close all other dropdowns
             allDropdowns.forEach(d => {
                 if (d !== dropdown) d.classList.remove('show');
             });
+            
+            // Toggle current dropdown
             dropdown.classList.toggle('show');
+            
+            // Add active class to current wrapper if dropdown is open
+            if (dropdown.classList.contains('show')) {
+                wrapper.classList.add('active');
+            }
         }
 
         function searchOptions(filterId, query) {
@@ -786,6 +800,7 @@
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.multi-select-wrapper')) {
                 document.querySelectorAll('.multi-select-dropdown').forEach(d => d.classList.remove('show'));
+                document.querySelectorAll('.multi-select-wrapper').forEach(w => w.classList.remove('active'));
             }
         });
 
