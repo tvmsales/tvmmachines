@@ -555,7 +555,7 @@
         }
 
         function initializeFilters() {
-            const branches = [...new Set(allData.map(d => d.branch).filter(Boolean))].sort();
+            const branches = [...new Set(allData.map(d => d.branch).filter(b => b && b.toLowerCase() !== 'grand total'))].sort();
             const machines = [...new Set(allData.map(d => d.im_descr).filter(Boolean))].sort();
             const customerTypes = [...new Set(allData.map(d => d.customer_type).filter(Boolean))].sort();
             const dispatchMonths = [...new Set(allData.map(d => d['Dispatch month']).filter(Boolean))].sort();
@@ -800,6 +800,7 @@
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.multi-select-wrapper')) {
                 document.querySelectorAll('.multi-select-dropdown').forEach(d => d.classList.remove('show'));
+                document.querySelectorAll('.multi-select-wrapper').forEach(w => w.classList.remove('active'));
             }
         });
 
