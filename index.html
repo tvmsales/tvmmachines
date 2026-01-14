@@ -23,7 +23,7 @@
         .blue { background: #1f6feb; } .green { background: #238636; } .purp { background: #8957e5; } .org { background: #da3633; }
         .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .chart-card { background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; height: 400px; }
-        h3 { font-size: 11px; margin-bottom: 8px; color: #8b949e; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 4px; }
+        .chart-title { font-size: 11px; margin-bottom: 8px; color: #8b949e; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -49,15 +49,17 @@
 </div>
 
 <div class="charts">
-    <div class="chart-card"><h3>1: Machine wise (by Branch)</h3><canvas id="c1"></canvas></div>
-    <div class="chart-card"><h3>2: Customer wise (by Branch)</h3><canvas id="c2"></canvas></div>
-    <div class="chart-card"><h3>3: Vertical Trends (by Branch)</h3><canvas id="c3"></canvas></div>
-    <div class="chart-card"><h3>Machine Installation Status</h3><canvas id="c4"></canvas></div>
+    <div class="chart-card"><div id="t_c1" class="chart-title">Visual 1</div><canvas id="c1"></canvas></div>
+    <div class="chart-card"><div id="t_c2" class="chart-title">Visual 2</div><canvas id="c2"></canvas></div>
+    <div class="chart-card"><div id="t_c3" class="chart-title">Visual 3</div><canvas id="c3"></canvas></div>
+    <div class="chart-card"><div id="t_c4" class="chart-title">Machine Installation Status</div><canvas id="c4"></canvas></div>
 </div>
 
 <script>
 Chart.register(ChartDataLabels);
-let raw = [], filtered = [], charts = {}, branchColors = { GJ:'#FF5733', KA:'#33FF57', MH:'#3357FF', TL:'#F333FF', TN:'#33FFF3', UP:'#FFF333', WB:'#FF3380' };
+let raw = [], filtered = [], charts = {}, branchColors = { 
+    'GJ':'#FF5733', 'KA':'#33FF57', 'MH':'#3357FF', 'TL':'#F333FF', 'TN':'#33FFF3', 'UP':'#FFF333', 'WB':'#FF3380' 
+};
 
 async function start() {
     const res = await fetch('https://raw.githubusercontent.com/tvmsales/tvmmachines/main/TVMMACHINES.csv');
@@ -135,17 +137,30 @@ function update() {
     document.getElementById('k3').innerText = Math.round(demoSum);
     document.getElementById('k4').innerText = Math.round(pSum);
 
-    renderChart('c1', 'im_descr');
-    renderChart('c2', 'party_name');
-    renderChart('c3', 'customer_type');
-    renderChart('c4', 'dispatch_month');
+    renderChart('c1', 'im_descr', 'Machine wise (by Branch)');
+    renderChart('c2', 'party_name', 'Customer wise (by Branch)');
+    renderChart('c3', 'customer_type', 'Vertical Trends (by Branch)');
+    renderChart('c4', 'dispatch_month', 'Machine Installation Status');
 }
 
-function renderChart(canvasId, rowKey) {
-    const activeBranches = [...new Set(filtered.map(r => r.branch))].sort();
-    const activeRows = [...new Set(filtered.map(r => r[rowKey]))].slice(0, 10);
+function renderChart(canvasId, rowKey, baseTitle) {
+    const selectedBranches = Array.from(document.querySelectorAll('#b .list input:checked')).map(i => i.value).sort();
+    
+    // Aggregate totals per row to find Top 10
+    const rowTotals = {};
+    filtered.forEach(r => {
+        const key = r[rowKey];
+        if (key) rowTotals[key] = (rowTotals[key] || 0) + r.grand_total;
+    });
 
-    const datasets = activeBranches.map(br => ({
+    const activeRows = Object.keys(rowTotals)
+        .sort((a, b) => rowTotals[b] - rowTotals[a])
+        .slice(0, 10);
+
+    // Update Title with "Top 10"
+    document.getElementById('t_' + canvasId).innerText = activeRows.length > 0 ? `Top ${activeRows.length} ${baseTitle}` : baseTitle;
+
+    const datasets = selectedBranches.map(br => ({
         label: br,
         data: activeRows.map(row => {
             return filtered
@@ -154,7 +169,7 @@ function renderChart(canvasId, rowKey) {
         }),
         backgroundColor: branchColors[br] || '#58a6ff',
         datalabels: { 
-            color: '#000', // Black labels inside bar segments
+            color: '#000', 
             formatter: (v) => v > 0 ? Math.round(v) : ''
         }
     }));
@@ -168,16 +183,10 @@ function renderChart(canvasId, rowKey) {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { right: 40 } }, // Space for the total label
+            layout: { padding: { right: 40 } },
             plugins: {
                 legend: { position: 'top', labels: { boxWidth: 8, color: '#8b949e', font: { size: 9 } } },
-                datalabels: {
-                    font: { weight: 'bold', size: 10 },
-                    // Logic to show Grand Total at the end of the last visible stack
-                    display: (context) => {
-                        return true; 
-                    }
-                }
+                datalabels: { font: { weight: 'bold', size: 10 } }
             },
             scales: {
                 x: { stacked: true, ticks: { color: '#8b949e', font: { size: 9 } }, grid: { color: '#30363d' } },
@@ -203,9 +212,7 @@ function renderChart(canvasId, rowKey) {
                             lastX = Math.max(lastX, meta.data[i].x);
                         }
                     });
-                    if (total > 0) {
-                        ctx.fillText(Math.round(total), lastX + 5, chart.getDatasetMeta(0).data[i].y + 4);
-                    }
+                    if (total > 0) ctx.fillText(Math.round(total), lastX + 5, chart.getDatasetMeta(0).data[i].y + 4);
                 });
                 ctx.restore();
             }
