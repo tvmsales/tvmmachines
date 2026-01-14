@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TVM Analytics - Management Presentation</title>
+    <title>TVM Analytics - Management Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -30,7 +30,7 @@
 
 <div class="header">
     <h3>TVM ANALYTICS - BRANCH MATRIX VIEW</h3>
-    <div style="font-size: 10px; color: #3fb950;">● CALCULATIONS SYNCED</div>
+    <div style="font-size: 10px; color: #3fb950;">● STATUS: VERIFIED</div>
 </div>
 
 <div class="filters">
@@ -65,17 +65,16 @@ async function start() {
     Papa.parse(csv, { header: true, skipEmptyLines: true, complete: function(r) {
         raw = r.data.map(row => {
             const cleanRow = {};
-            // Aggressive header cleanup
             Object.keys(row).forEach(key => {
                 const k = key.trim().toLowerCase();
-                const val = row[key];
+                const val = row[key] ? row[key].trim() : "";
                 if (k === "branch") cleanRow.branch = val;
                 if (k === "party_name") cleanRow.party_name = val;
-                if (k.includes("im_descr") || k.includes("description")) cleanRow.im_descr = val;
-                if (k === "customer_type" || k === "customer type") cleanRow.customer_type = val;
-                if (k === "dispatch month" || k === "dispatch_month") cleanRow.dispatch_month = val;
-                if (k === "installation_month" || k === "installation month") cleanRow.installation_month = val;
-                if (k === "grand_total" || k === "grand total") cleanRow.grand_total = parseFloat(val) || 0;
+                if (k.includes("im_descr")) cleanRow.im_descr = val;
+                if (k.includes("customer_type")) cleanRow.customer_type = val;
+                if (k.includes("dispatch month")) cleanRow.dispatch_month = val;
+                if (k.includes("installation_month")) cleanRow.installation_month = val;
+                if (k.includes("grand_total") || k === "grand total") cleanRow.grand_total = parseFloat(val) || 0;
             });
             return cleanRow;
         }).filter(x => x.branch && !/total/i.test(x.branch) && x.customer_type && !/total/i.test(x.customer_type));
@@ -91,7 +90,7 @@ async function start() {
 }
 
 function setupFilter(id, key) {
-    const vals = [...new Set(raw.map(x => x[key]).filter(v => v && v !== ''))].sort();
+    const vals = [...new Set(raw.map(x => x[key]).filter(v => v !== ''))].sort();
     const container = document.querySelector(`#${id} .list`);
     vals.forEach(v => { container.innerHTML += `<div class="opt"><input type="checkbox" value="${v}" checked onchange="sync()"> ${v}</div>`; });
 }
@@ -121,26 +120,27 @@ function toggle(id) {
 }
 
 function update() {
-    // CORRECTED LOGIC: Based on your instructions
-    let dispatchSum = 0; // Total Dispatched
-    let installedSum = 0; // Only where Installation_Month is present
-    let demoSum = 0; // Only where Customer_Type is "DEMO"
-    let pendingSum = 0; // Where Installation_Month is blank
+    let dispatchSum = 0, installedSum = 0, demoSum = 0, pendingSum = 0;
 
     filtered.forEach(r => {
-        const gTotal = r.grand_total || 0;
-        dispatchSum += gTotal;
+        const val = r.grand_total || 0;
+        const instMonth = (r.installation_month || "").toLowerCase();
         
-        // Installed logic: If month is present and not empty
-        if (r.installation_month && r.installation_month.trim() !== "") {
-            installedSum += gTotal;
+        dispatchSum += val;
+
+        // Strict Check: Must be a value that isn't blank or the "NOT_Entered" placeholder
+        const isActuallyInstalled = instMonth !== "" && 
+                                   instMonth !== "install_date_not_entered" && 
+                                   instMonth !== "install_date_not_ entered"; // space variant
+
+        if (isActuallyInstalled) {
+            installedSum += val;
         } else {
-            pendingSum += gTotal;
+            pendingSum += val;
         }
 
-        // Demo logic: If Customer_Type is exactly DEMO
-        if (r.customer_type && r.customer_type.toUpperCase().includes("DEMO")) {
-            demoSum += gTotal;
+        if ((r.customer_type || "").toUpperCase().includes("DEMO")) {
+            demoSum += val;
         }
     });
 
