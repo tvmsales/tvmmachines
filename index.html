@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TVM Executive Dashboard - Pivot Matrix</title>
+    <title>TVM Executive Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; padding: 10px; }
@@ -29,7 +30,7 @@
 
 <div class="header">
     <h3>TVM ANALYTICS - BRANCH MATRIX VIEW</h3>
-    <div id="status" style="font-size: 10px; color: #3fb950;">● DATA LIVE</div>
+    <div style="font-size: 10px; color: #3fb950;">● MANAGEMENT READY</div>
 </div>
 
 <div class="filters">
@@ -48,13 +49,16 @@
 </div>
 
 <div class="charts">
-    <div class="chart-card"><h3>Pivot 1: Machine Wise (Columns: Branch)</h3><canvas id="c1"></canvas></div>
-    <div class="chart-card"><h3>Pivot 2: Customer Wise (Columns: Branch)</h3><canvas id="c2"></canvas></div>
-    <div class="chart-card"><h3>Pivot 3: Vertical Trend (Columns: Branch)</h3><canvas id="c3"></canvas></div>
-    <div class="chart-card"><h3>Pivot 4: Flow Tracker (Columns: Branch)</h3><canvas id="c4"></canvas></div>
+    <div class="chart-card"><h3>1: Machine Wise (Columns: Branch)</h3><canvas id="c1"></canvas></div>
+    <div class="chart-card"><h3>2: Customer Wise (Columns: Branch)</h3><canvas id="c2"></canvas></div>
+    <div class="chart-card"><h3>3: Vertical Trend (Columns: Branch)</h3><canvas id="c3"></canvas></div>
+    <div class="chart-card"><h3>4: Flow Tracker (Columns: Branch)</h3><canvas id="c4"></canvas></div>
 </div>
 
 <script>
+// Register the datalabels plugin
+Chart.register(ChartDataLabels);
+
 let raw = [], filtered = [], charts = {}, branchColors = { GJ:'#FF5733', KA:'#33FF57', MH:'#3357FF', TL:'#F333FF', TN:'#33FFF3', UP:'#FFF333', WB:'#FF3380' };
 
 async function start() {
@@ -106,16 +110,15 @@ function update() {
     document.getElementById('k3').innerText = Math.round(dem);
     document.getElementById('k4').innerText = filtered.length - Math.round(ins);
 
-    // Pivot Logic: Rows (Y-Axis) vs Columns (Branch Stacked)
-    renderPivot('c1', 'im_descr');       // Machine wise
-    renderPivot('c2', 'party_name');     // Customer wise
-    renderPivot('c3', 'customer_type');  // Vertical wise
-    renderPivot('c4', 'Dispatch month'); // Month wise
+    renderPivot('c1', 'im_descr');       
+    renderPivot('c2', 'party_name');     
+    renderPivot('c3', 'customer_type');  
+    renderPivot('c4', 'Dispatch month'); 
 }
 
 function renderPivot(canvasId, rowKey) {
     const branches = [...new Set(filtered.map(r => r.branch))].sort();
-    const rows = [...new Set(filtered.map(r => r[rowKey]))].slice(0, 10); // Show top 10 rows for readability
+    const rows = [...new Set(filtered.map(r => r[rowKey]))].slice(0, 10);
     
     const datasets = branches.map(br => ({
         label: br,
@@ -132,7 +135,16 @@ function renderPivot(canvasId, rowKey) {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'top', labels: { boxWidth: 10, color: '#8b949e', font: { size: 9 } } } },
+            plugins: { 
+                legend: { position: 'top', labels: { boxWidth: 10, color: '#8b949e', font: { size: 9 } } },
+                datalabels: { // Static data labels
+                    color: '#fff',
+                    anchor: 'center',
+                    align: 'center',
+                    font: { weight: 'bold', size: 10 },
+                    formatter: (value) => value > 0 ? value : '' 
+                }
+            },
             scales: {
                 x: { stacked: true, ticks: { color: '#8b949e', font: { size: 9 } }, grid: { color: '#30363d' } },
                 y: { stacked: true, ticks: { color: '#8b949e', font: { size: 9 } }, grid: { display: false } }
