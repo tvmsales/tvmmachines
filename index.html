@@ -22,8 +22,15 @@
         .val { font-size: 24px; display: block; font-weight: bold; }
         .blue { background: #1f6feb; } .green { background: #238636; } .purp { background: #8957e5; } .org { background: #da3633; }
         .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .chart-card { background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; height: 400px; }
+        .chart-card { background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; height: 400px; overflow-y: auto; }
         .chart-title { font-size: 11px; margin-bottom: 8px; color: #8b949e; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 4px; font-weight: bold; }
+        
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; font-size: 12px; color: #c9d1d9; }
+        th { text-align: left; background: #21262d; padding: 10px; border: 1px solid #30363d; color: #58a6ff; }
+        td { padding: 10px; border: 1px solid #30363d; }
+        tr:nth-child(even) { background: #0d1117; }
+        .t-total { font-weight: bold; background: #238636 !important; color: white; }
     </style>
 </head>
 <body>
@@ -52,7 +59,10 @@
     <div class="chart-card"><div id="t_c1" class="chart-title">Visual 1</div><canvas id="c1"></canvas></div>
     <div class="chart-card"><div id="t_c2" class="chart-title">Visual 2</div><canvas id="c2"></canvas></div>
     <div class="chart-card"><div id="t_c3" class="chart-title">Visual 3</div><canvas id="c3"></canvas></div>
-    <div class="chart-card"><div id="t_c4" class="chart-title">Machine Installation Status</div><canvas id="c4"></canvas></div>
+    <div class="chart-card">
+        <div class="chart-title">Machine Installation Summary (Tabular)</div>
+        <div id="table-container"></div>
+    </div>
 </div>
 
 <script>
@@ -60,6 +70,14 @@ Chart.register(ChartDataLabels);
 let raw = [], filtered = [], charts = {}, branchColors = { 
     'GJ':'#FF5733', 'KA':'#33FF57', 'MH':'#3357FF', 'TL':'#F333FF', 'TN':'#33FFF3', 'UP':'#FFF333', 'WB':'#FF3380' 
 };
+
+function parseMonth(s) {
+    if(!s || s.toLowerCase().includes("not_entered")) return new Date(2099, 0);
+    const months = {jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11};
+    const m = s.substring(0,3).toLowerCase();
+    const y = parseInt("20" + s.substring(s.length - 2));
+    return new Date(y, months[m] || 0);
+}
 
 async function start() {
     const res = await fetch('https://raw.githubusercontent.com/tvmsales/tvmmachines/main/TVMMACHINES.csv');
@@ -79,20 +97,20 @@ async function start() {
                 if (k.includes("grand_total") || k === "grand total") cleanRow.grand_total = parseFloat(val) || 0;
             });
             return cleanRow;
-        }).filter(x => x.branch && !/total/i.test(x.branch) && x.customer_type && !/total/i.test(x.customer_type));
+        }).filter(x => x.branch && !/total/i.test(x.branch));
         
-        filtered = [...raw];
         setupFilter('b', 'branch');
         setupFilter('m', 'im_descr');
         setupFilter('t', 'customer_type');
-        setupFilter('d', 'dispatch_month');
-        setupFilter('i', 'installation_month');
-        update();
+        setupFilter('d', 'dispatch_month', true);
+        setupFilter('i', 'installation_month', true);
+        sync();
     }});
 }
 
-function setupFilter(id, key) {
-    const vals = [...new Set(raw.map(x => x[key]).filter(v => v !== ''))].sort();
+function setupFilter(id, key, isDate = false) {
+    let vals = [...new Set(raw.map(x => x[key]).filter(v => v !== ''))];
+    if (isDate) vals.sort((a, b) => parseMonth(a) - parseMonth(b)); else vals.sort();
     const container = document.querySelector(`#${id} .list`);
     vals.forEach(v => { container.innerHTML += `<div class="opt"><input type="checkbox" value="${v}" checked onchange="sync()"> ${v}</div>`; });
 }
@@ -123,12 +141,25 @@ function toggle(id) {
 
 function update() {
     let dSum = 0, iSum = 0, demoSum = 0, pSum = 0;
+    const monthlyStats = {};
+
     filtered.forEach(r => {
         const val = r.grand_total || 0;
         const im = (r.installation_month || "").toLowerCase();
+        const dm = r.dispatch_month || "Unknown";
+        
         dSum += val;
+        if (!monthlyStats[dm]) monthlyStats[dm] = { disp: 0, inst: 0, pend: 0 };
+        monthlyStats[dm].disp += val;
+
         const isI = im !== "" && im !== "install_date_not_entered" && im !== "install_date_not_ entered";
-        if (isI) iSum += val; else pSum += val;
+        if (isI) {
+            iSum += val;
+            monthlyStats[dm].inst += val;
+        } else {
+            pSum += val;
+            monthlyStats[dm].pend += val;
+        }
         if ((r.customer_type || "").toUpperCase().includes("DEMO")) demoSum += val;
     });
 
@@ -140,38 +171,40 @@ function update() {
     renderChart('c1', 'im_descr', 'Machine wise (by Branch)');
     renderChart('c2', 'party_name', 'Customer wise (by Branch)');
     renderChart('c3', 'customer_type', 'Vertical Trends (by Branch)');
-    renderChart('c4', 'dispatch_month', 'Machine Installation Status');
+    renderTable(monthlyStats);
+}
+
+function renderTable(data) {
+    const sortedMonths = Object.keys(data).sort((a, b) => parseMonth(a) - parseMonth(b));
+    let html = `<table><thead><tr><th>Dispatch Month</th><th>Dispatched</th><th>Installed</th><th>Pending</th></tr></thead><tbody>`;
+    let tD = 0, tI = 0, tP = 0;
+
+    sortedMonths.forEach(m => {
+        const d = data[m];
+        tD += d.disp; tI += d.inst; tP += d.pend;
+        html += `<tr><td>${m}</td><td>${Math.round(d.disp)}</td><td>${Math.round(d.inst)}</td><td>${Math.round(d.pend)}</td></tr>`;
+    });
+
+    html += `<tr class="t-total"><td>GRAND TOTAL</td><td>${Math.round(tD)}</td><td>${Math.round(tI)}</td><td>${Math.round(tP)}</td></tr>`;
+    html += `</tbody></table>`;
+    document.getElementById('table-container').innerHTML = html;
 }
 
 function renderChart(canvasId, rowKey, baseTitle) {
     const selectedBranches = Array.from(document.querySelectorAll('#b .list input:checked')).map(i => i.value).sort();
-    
-    // Aggregate totals per row to find Top 10
     const rowTotals = {};
     filtered.forEach(r => {
         const key = r[rowKey];
         if (key) rowTotals[key] = (rowTotals[key] || 0) + r.grand_total;
     });
-
-    const activeRows = Object.keys(rowTotals)
-        .sort((a, b) => rowTotals[b] - rowTotals[a])
-        .slice(0, 10);
-
-    // Update Title with "Top 10"
-    document.getElementById('t_' + canvasId).innerText = activeRows.length > 0 ? `Top ${activeRows.length} ${baseTitle}` : baseTitle;
+    const activeRows = Object.keys(rowTotals).sort((a, b) => rowTotals[b] - rowTotals[a]).slice(0, 10);
+    document.getElementById('t_' + canvasId).innerText = `Top ${activeRows.length} ${baseTitle}`;
 
     const datasets = selectedBranches.map(br => ({
         label: br,
-        data: activeRows.map(row => {
-            return filtered
-                .filter(r => r[rowKey] === row && r.branch === br)
-                .reduce((sum, curr) => sum + curr.grand_total, 0);
-        }),
+        data: activeRows.map(row => filtered.filter(r => r[rowKey] === row && r.branch === br).reduce((s, c) => s + c.grand_total, 0)),
         backgroundColor: branchColors[br] || '#58a6ff',
-        datalabels: { 
-            color: '#000', 
-            formatter: (v) => v > 0 ? Math.round(v) : ''
-        }
+        datalabels: { color: '#000', formatter: (v) => v > 0 ? Math.round(v) : '' }
     }));
 
     const ctx = document.getElementById(canvasId).getContext('2d');
@@ -180,9 +213,7 @@ function renderChart(canvasId, rowKey, baseTitle) {
         type: 'bar',
         data: { labels: activeRows, datasets: datasets },
         options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             layout: { padding: { right: 40 } },
             plugins: {
                 legend: { position: 'top', labels: { boxWidth: 8, color: '#8b949e', font: { size: 9 } } },
@@ -197,30 +228,17 @@ function renderChart(canvasId, rowKey, baseTitle) {
             id: 'chartTotals',
             afterDatasetsDraw(chart) {
                 const { ctx, data } = chart;
-                ctx.save();
-                ctx.font = 'bold 10px Segoe UI';
-                ctx.fillStyle = '#c9d1d9';
-                ctx.textAlign = 'left';
-
-                data.labels.forEach((label, i) => {
-                    let total = 0;
-                    let lastX = 0;
-                    data.datasets.forEach((dataset) => {
-                        total += dataset.data[i];
-                        const meta = chart.getDatasetMeta(data.datasets.indexOf(dataset));
-                        if (meta.data[i] && !meta.hidden) {
-                            lastX = Math.max(lastX, meta.data[i].x);
-                        }
-                    });
-                    if (total > 0) ctx.fillText(Math.round(total), lastX + 5, chart.getDatasetMeta(0).data[i].y + 4);
+                ctx.save(); ctx.font = 'bold 10px Segoe UI'; ctx.fillStyle = '#c9d1d9';
+                data.labels.forEach((l, i) => {
+                    let tot = 0, lX = 0;
+                    data.datasets.forEach(ds => { tot += ds.data[i]; const m = chart.getDatasetMeta(data.datasets.indexOf(ds)); if (m.data[i]) lX = Math.max(lX, m.data[i].x); });
+                    if (tot > 0) ctx.fillText(Math.round(tot), lX + 5, chart.getDatasetMeta(0).data[i].y + 4);
                 });
                 ctx.restore();
             }
         }]
     });
 }
-
-window.onclick = (e) => { if(!e.target.closest('.filters')) document.querySelectorAll('.drop-content').forEach(d => d.classList.remove('show')); };
 start();
 </script>
 </body>
