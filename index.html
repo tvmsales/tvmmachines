@@ -7,20 +7,21 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9; padding: 15px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; padding: 15px; }
         .header { background: #161b22; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
         .filters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px; background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; }
         .drop-btn { width: 100%; padding: 8px; background: #21262d; color: white; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; text-align: left; font-size: 12px; }
-        .drop-content { display: none; position: absolute; width: 100%; background: #161b22; border: 1px solid #30363d; z-index: 100; max-height: 200px; overflow-y: auto; border-radius: 6px; margin-top: 4px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
+        .drop-content { display: none; position: absolute; width: 100%; background: #161b22; border: 1px solid #30363d; z-index: 100; max-height: 250px; overflow-y: auto; border-radius: 6px; margin-top: 4px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); padding: 10px; }
+        .search-box { width: 100%; padding: 6px; margin-bottom: 10px; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 11px; }
         .show { display: block; }
-        .opt { padding: 8px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 8px; font-size: 11px; }
+        .opt { padding: 6px; border-bottom: 1px solid #21262d; display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer; }
         .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
         .card { padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        .val { font-size: 22px; display: block; font-weight: bold; margin-top: 5px; }
+        .val { font-size: 24px; display: block; font-weight: bold; margin-top: 5px; }
         .blue { background: #1f6feb; } .green { background: #238636; } .purp { background: #8957e5; } .org { background: #da3633; }
         .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .chart-card { background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; height: 380px; position: relative; }
-        h3 { font-size: 12px; margin-bottom: 10px; color: #8b949e; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
+        .chart-card { background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; height: 400px; }
+        h3 { font-size: 12px; margin-bottom: 12px; color: #8b949e; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -31,11 +32,11 @@
 </div>
 
 <div class="filters">
-    <div style="position:relative"><label style="font-size:10px; color:#8b949e">BRANCH</label><button class="drop-btn" onclick="toggle('b')">All Branches ▼</button><div id="b" class="drop-content"></div></div>
-    <div style="position:relative"><label style="font-size:10px; color:#8b949e">MACHINE</label><button class="drop-btn" onclick="toggle('m')">All Machines ▼</button><div id="m" class="drop-content"></div></div>
-    <div style="position:relative"><label style="font-size:10px; color:#8b949e">CUST. TYPE</label><button class="drop-btn" onclick="toggle('t')">All Types ▼</button><div id="t" class="drop-content"></div></div>
-    <div style="position:relative"><label style="font-size:10px; color:#8b949e">DISPATCH</label><button class="drop-btn" onclick="toggle('d')">All Months ▼</button><div id="d" class="drop-content"></div></div>
-    <div style="position:relative"><label style="font-size:10px; color:#8b949e">INSTALL</label><button class="drop-btn" onclick="toggle('i')">All Months ▼</button><div id="i" class="drop-content"></div></div>
+    <div style="position:relative"><label style="font-size:10px; color:#8b949e">BRANCH</label><button class="drop-btn" onclick="toggle('b')">Filter Branches ▼</button><div id="b" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="filterList('b')"><div class="list"></div></div></div>
+    <div style="position:relative"><label style="font-size:10px; color:#8b949e">MACHINE</label><button class="drop-btn" onclick="toggle('m')">Filter Machines ▼</button><div id="m" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="filterList('m')"><div class="list"></div></div></div>
+    <div style="position:relative"><label style="font-size:10px; color:#8b949e">CUST. TYPE</label><button class="drop-btn" onclick="toggle('t')">Filter Types ▼</button><div id="t" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="filterList('t')"><div class="list"></div></div></div>
+    <div style="position:relative"><label style="font-size:10px; color:#8b949e">DISPATCH</label><button class="drop-btn" onclick="toggle('d')">Filter Months ▼</button><div id="d" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="filterList('d')"><div class="list"></div></div></div>
+    <div style="position:relative"><label style="font-size:10px; color:#8b949e">INSTALL</label><button class="drop-btn" onclick="toggle('i')">Filter Months ▼</button><div id="i" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="filterList('i')"><div class="list"></div></div></div>
 </div>
 
 <div class="kpis">
@@ -46,8 +47,8 @@
 </div>
 
 <div class="charts">
-    <div class="chart-card"><h3>Pivot 1: Machine Wise x Branch</h3><canvas id="c1"></canvas></div>
-    <div class="chart-card"><h3>Pivot 2: Customer Wise x Branch</h3><canvas id="c2"></canvas></div>
+    <div class="chart-card"><h3>Pivot 1: Machine wise x Branch</h3><canvas id="c1"></canvas></div>
+    <div class="chart-card"><h3>Pivot 2: Customer wise x Branch</h3><canvas id="c2"></canvas></div>
     <div class="chart-card"><h3>Pivot 3: Vertical Trend (Type x Month)</h3><canvas id="c3"></canvas></div>
     <div class="chart-card"><h3>Pivot 4: Flow Tracker (Dispatch x Install)</h3><canvas id="c4"></canvas></div>
 </div>
@@ -61,7 +62,7 @@ async function start() {
     Papa.parse(csv, {
         header: true, skipEmptyLines: true,
         complete: function(results) {
-            // THE FIX: Aggressively remove all "Total" rows from Branch and Customer Type
+            // DATA CLEANING: Removes Grand Total and Corporate Total rows
             raw = results.data.filter(r => 
                 r.branch && !/total/i.test(r.branch) && 
                 r.customer_type && !/total/i.test(r.customer_type)
@@ -79,9 +80,17 @@ async function start() {
 
 function setupFilter(id, key) {
     const vals = [...new Set(raw.map(x => x[key]).filter(Boolean))].sort();
-    const div = document.getElementById(id);
+    const container = document.querySelector(`#${id} .list`);
     vals.forEach(v => {
-        div.innerHTML += `<div class="opt"><input type="checkbox" value="${v}" checked onchange="sync()"> ${v}</div>`;
+        container.innerHTML += `<div class="opt"><input type="checkbox" value="${v}" checked onchange="sync()"> ${v}</div>`;
+    });
+}
+
+function filterList(id) {
+    const q = document.querySelector(`#${id} .search-box`).value.toLowerCase();
+    document.querySelectorAll(`#${id} .opt`).forEach(opt => {
+        const txt = opt.innerText.toLowerCase();
+        opt.style.display = txt.includes(q) ? 'flex' : 'none';
     });
 }
 
@@ -100,7 +109,7 @@ function toggle(id) {
 }
 
 function update() {
-    // KPIs
+    // KPI Updates
     document.getElementById('k1').innerText = filtered.length;
     let inst = 0, demo = 0;
     filtered.forEach(r => { inst += parseFloat(r.installation || 0); demo += parseFloat(r.demo || 0); });
@@ -108,23 +117,23 @@ function update() {
     document.getElementById('k3').innerText = Math.round(demo);
     document.getElementById('k4').innerText = filtered.length - Math.round(inst);
 
-    // Pivot 1: Machine Wise (im_descr x branch)
-    render('c1', r => `${r.im_descr} | ${r.branch}`, 'bar', '#1f6feb');
+    // Pivot 1: Machine x Branch
+    render('c1', r => `${r.im_descr} | (${r.branch})`, 'bar', '#1f6feb');
     
-    // Pivot 2: Customer Wise (party_name x branch)
-    render('c2', r => `${r.party_name} (${r.branch})`, 'bar', '#8957e5');
+    // Pivot 2: Customer x Branch
+    render('c2', r => `${r.party_name} | (${r.branch})`, 'bar', '#8957e5');
     
-    // Pivot 3: Vertical Trend (Type x Month)
-    render('c3', r => `${r.customer_type} [${r['Dispatch month']}]`, 'line', '#238636');
+    // Pivot 3: Vertical Trend with Branch Context
+    render('c3', r => `${r.customer_type} - ${r['Dispatch month']} (${r.branch})`, 'line', '#238636');
     
-    // Pivot 4: Lifecycle Flow (Dispatch x Installation)
-    render('c4', r => `D: ${r['Dispatch month']} → I: ${r.installation_month || 'N/A'}`, 'bar', '#da3633');
+    // Pivot 4: Lifecycle with Branch Context
+    render('c4', r => `D: ${r['Dispatch month']} → I: ${r.installation_month || 'N/A'} (${r.branch})`, 'bar', '#da3633');
 }
 
 function render(id, pivotFn, type, color) {
     const counts = {};
     filtered.forEach(r => { const k = pivotFn(r); counts[k] = (counts[k] || 0) + 1; });
-    const data = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 12);
+    const data = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
     const ctx = document.getElementById(id).getContext('2d');
     if(charts[id]) charts[id].destroy();
     charts[id] = new Chart(ctx, {
