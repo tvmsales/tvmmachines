@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TVM Analytics - Management Dashboard</title>
+    <title>TVM Executive Dashboard - Auditor Verified</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -29,8 +29,8 @@
 <body>
 
 <div class="header">
-    <h3>TVM ANALYTICS - BRANCH MATRIX VIEW</h3>
-    <div style="font-size: 10px; color: #3fb950;">● STATUS: VERIFIED</div>
+    <h3>TVM ANALYTICS - MANAGEMENT DASHBOARD</h3>
+    <div style="font-size: 10px; color: #3fb950;">● AUDITOR VERIFIED</div>
 </div>
 
 <div class="filters">
@@ -52,7 +52,7 @@
     <div class="chart-card"><h3>1: Machine wise (by Branch)</h3><canvas id="c1"></canvas></div>
     <div class="chart-card"><h3>2: Customer wise (by Branch)</h3><canvas id="c2"></canvas></div>
     <div class="chart-card"><h3>3: Vertical Trends (by Branch)</h3><canvas id="c3"></canvas></div>
-    <div class="chart-card"><h3>4: Flow Lifecycle (by Branch)</h3><canvas id="c4"></canvas></div>
+    <div class="chart-card"><h3>Machine Installation Status</h3><canvas id="c4"></canvas></div>
 </div>
 
 <script>
@@ -121,27 +121,13 @@ function toggle(id) {
 
 function update() {
     let dispatchSum = 0, installedSum = 0, demoSum = 0, pendingSum = 0;
-
     filtered.forEach(r => {
         const val = r.grand_total || 0;
         const instMonth = (r.installation_month || "").toLowerCase();
-        
         dispatchSum += val;
-
-        // Strict Check: Must be a value that isn't blank or the "NOT_Entered" placeholder
-        const isActuallyInstalled = instMonth !== "" && 
-                                   instMonth !== "install_date_not_entered" && 
-                                   instMonth !== "install_date_not_ entered"; // space variant
-
-        if (isActuallyInstalled) {
-            installedSum += val;
-        } else {
-            pendingSum += val;
-        }
-
-        if ((r.customer_type || "").toUpperCase().includes("DEMO")) {
-            demoSum += val;
-        }
+        const isActuallyInstalled = instMonth !== "" && instMonth !== "install_date_not_entered" && instMonth !== "install_date_not_ entered";
+        if (isActuallyInstalled) installedSum += val; else pendingSum += val;
+        if ((r.customer_type || "").toUpperCase().includes("DEMO")) demoSum += val;
     });
 
     document.getElementById('k1').innerText = Math.round(dispatchSum);
@@ -166,8 +152,26 @@ function renderChart(canvasId, rowKey) {
                 .filter(r => r[rowKey] === row && r.branch === br)
                 .reduce((sum, curr) => sum + curr.grand_total, 0);
         }),
-        backgroundColor: branchColors[br] || '#58a6ff'
+        backgroundColor: branchColors[br] || '#58a6ff',
+        datalabels: { color: '#000' } // BLACK LABELS INSIDE SEGMENTS
     }));
+
+    // ADD GRAND TOTAL DATASET (HIDDEN BAR, VISIBLE LABEL)
+    datasets.push({
+        label: 'Total',
+        data: activeRows.map(row => {
+            return filtered.filter(r => r[rowKey] === row).reduce((sum, curr) => sum + curr.grand_total, 0);
+        }),
+        backgroundColor: 'transparent',
+        borderColor: 'transparent',
+        datalabels: {
+            color: '#c9d1d9',
+            anchor: 'end',
+            align: 'right',
+            offset: 5,
+            font: { weight: 'bold' }
+        }
+    });
 
     const ctx = document.getElementById(canvasId).getContext('2d');
     if(charts[canvasId]) charts[canvasId].destroy();
@@ -179,9 +183,11 @@ function renderChart(canvasId, rowKey) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'top', labels: { boxWidth: 8, color: '#8b949e', font: { size: 9 } } },
+                legend: { 
+                    position: 'top', 
+                    labels: { filter: (item) => item.text !== 'Total', boxWidth: 8, color: '#8b949e', font: { size: 9 } } 
+                },
                 datalabels: {
-                    color: '#fff',
                     font: { weight: 'bold', size: 10 },
                     formatter: (v) => v > 0 ? Math.round(v) : ''
                 }
