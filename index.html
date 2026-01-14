@@ -2,41 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TVM Machines - Executive Pivot Dashboard</title>
+    <title>TVM Executive Dashboard - Pivot Matrix</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; padding: 15px; }
-        .header { background: #161b22; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
-        .filters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px; background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; }
-        .drop-btn { width: 100%; padding: 8px; background: #21262d; color: white; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; text-align: left; font-size: 12px; }
-        .drop-content { display: none; position: absolute; width: 100%; background: #161b22; border: 1px solid #30363d; z-index: 100; max-height: 250px; overflow-y: auto; border-radius: 6px; margin-top: 4px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); padding: 10px; }
-        .search-box { width: 100%; padding: 6px; margin-bottom: 10px; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 11px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; padding: 10px; }
+        .header { background: #161b22; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        .filters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 10px; background: #161b22; padding: 12px; border-radius: 8px; border: 1px solid #30363d; }
+        .drop-btn { width: 100%; padding: 8px; background: #21262d; color: white; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; text-align: left; font-size: 11px; }
+        .drop-content { display: none; position: absolute; width: 220px; background: #161b22; border: 1px solid #58a6ff; z-index: 1000; max-height: 350px; overflow-y: auto; border-radius: 6px; margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); padding: 10px; }
+        .search-box { width: 100%; padding: 6px; margin-bottom: 8px; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 11px; position: sticky; top: 0; }
+        .select-all-wrap { padding: 6px; border-bottom: 1px solid #30363d; margin-bottom: 5px; font-weight: bold; color: #58a6ff; font-size: 11px; }
         .show { display: block; }
         .opt { padding: 6px; border-bottom: 1px solid #21262d; display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer; }
-        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
-        .card { padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        .val { font-size: 24px; display: block; font-weight: bold; margin-top: 5px; }
+        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+        .card { padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .val { font-size: 22px; display: block; font-weight: bold; }
         .blue { background: #1f6feb; } .green { background: #238636; } .purp { background: #8957e5; } .org { background: #da3633; }
-        .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .chart-card { background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; height: 400px; }
-        h3 { font-size: 12px; margin-bottom: 12px; color: #8b949e; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
+        .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .chart-card { background: #161b22; padding: 12px; border-radius: 8px; border: 1px solid #30363d; height: 380px; }
+        h3 { font-size: 11px; margin-bottom: 8px; color: #8b949e; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 4px; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h2>TVM Machines Pivot Analytics</h2>
-    <div style="font-size: 12px; color: #8b949e;">Management Presentation Mode</div>
+    <h3>TVM ANALYTICS - BRANCH MATRIX VIEW</h3>
+    <div id="status" style="font-size: 10px; color: #3fb950;">● DATA LIVE</div>
 </div>
 
 <div class="filters">
-    <div style="position:relative"><label style="font-size:10px; color:#8b949e">BRANCH</label><button class="drop-btn" onclick="toggle('b')">Filter Branches ▼</button><div id="b" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="filterList('b')"><div class="list"></div></div></div>
-    <div style="position:relative"><label style="font-size:10px; color:#8b949e">MACHINE</label><button class="drop-btn" onclick="toggle('m')">Filter Machines ▼</button><div id="m" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="filterList('m')"><div class="list"></div></div></div>
-    <div style="position:relative"><label style="font-size:10px; color:#8b949e">CUST. TYPE</label><button class="drop-btn" onclick="toggle('t')">Filter Types ▼</button><div id="t" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="filterList('t')"><div class="list"></div></div></div>
-    <div style="position:relative"><label style="font-size:10px; color:#8b949e">DISPATCH</label><button class="drop-btn" onclick="toggle('d')">Filter Months ▼</button><div id="d" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="filterList('d')"><div class="list"></div></div></div>
-    <div style="position:relative"><label style="font-size:10px; color:#8b949e">INSTALL</label><button class="drop-btn" onclick="toggle('i')">Filter Months ▼</button><div id="i" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="filterList('i')"><div class="list"></div></div></div>
+    <div style="position:relative"><button class="drop-btn" onclick="toggle('b')">BRANCH ▼</button><div id="b" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('b')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('b', this)"> SELECT ALL</div><div class="list"></div></div></div>
+    <div style="position:relative"><button class="drop-btn" onclick="toggle('m')">MACHINE ▼</button><div id="m" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('m')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('m', this)"> SELECT ALL</div><div class="list"></div></div></div>
+    <div style="position:relative"><button class="drop-btn" onclick="toggle('t')">CUST. TYPE ▼</button><div id="t" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('t')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('t', this)"> SELECT ALL</div><div class="list"></div></div></div>
+    <div style="position:relative"><button class="drop-btn" onclick="toggle('d')">DISPATCH ▼</button><div id="d" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('d')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('d', this)"> SELECT ALL</div><div class="list"></div></div></div>
+    <div style="position:relative"><button class="drop-btn" onclick="toggle('i')">INSTALL ▼</button><div id="i" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('i')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('i', this)"> SELECT ALL</div><div class="list"></div></div></div>
 </div>
 
 <div class="kpis">
@@ -47,55 +48,44 @@
 </div>
 
 <div class="charts">
-    <div class="chart-card"><h3>Pivot 1: Machine wise x Branch</h3><canvas id="c1"></canvas></div>
-    <div class="chart-card"><h3>Pivot 2: Customer wise x Branch</h3><canvas id="c2"></canvas></div>
-    <div class="chart-card"><h3>Pivot 3: Vertical Trend (Type x Month)</h3><canvas id="c3"></canvas></div>
-    <div class="chart-card"><h3>Pivot 4: Flow Tracker (Dispatch x Install)</h3><canvas id="c4"></canvas></div>
+    <div class="chart-card"><h3>Pivot 1: Machine Wise (Columns: Branch)</h3><canvas id="c1"></canvas></div>
+    <div class="chart-card"><h3>Pivot 2: Customer Wise (Columns: Branch)</h3><canvas id="c2"></canvas></div>
+    <div class="chart-card"><h3>Pivot 3: Vertical Trend (Columns: Branch)</h3><canvas id="c3"></canvas></div>
+    <div class="chart-card"><h3>Pivot 4: Flow Tracker (Columns: Branch)</h3><canvas id="c4"></canvas></div>
 </div>
 
 <script>
-let raw = [], filtered = [], charts = {};
+let raw = [], filtered = [], charts = {}, branchColors = { GJ:'#FF5733', KA:'#33FF57', MH:'#3357FF', TL:'#F333FF', TN:'#33FFF3', UP:'#FFF333', WB:'#FF3380' };
 
 async function start() {
     const res = await fetch('https://raw.githubusercontent.com/tvmsales/tvmmachines/main/TVMMACHINES.csv');
     const csv = await res.text();
-    Papa.parse(csv, {
-        header: true, skipEmptyLines: true,
-        complete: function(results) {
-            // DATA CLEANING: Removes Grand Total and Corporate Total rows
-            raw = results.data.filter(r => 
-                r.branch && !/total/i.test(r.branch) && 
-                r.customer_type && !/total/i.test(r.customer_type)
-            );
-            filtered = [...raw];
-            setupFilter('b', 'branch');
-            setupFilter('m', 'im_descr');
-            setupFilter('t', 'customer_type');
-            setupFilter('d', 'Dispatch month');
-            setupFilter('i', 'installation_month');
-            update();
-        }
-    });
+    Papa.parse(csv, { header: true, skipEmptyLines: true, complete: function(r) {
+        raw = r.data.filter(x => x.branch && !/total/i.test(x.branch) && x.customer_type && !/total/i.test(x.customer_type));
+        filtered = [...raw];
+        ['branch','im_descr','customer_type','Dispatch month','installation_month'].forEach((k, idx) => setupFilter(['b','m','t','d','i'][idx], k));
+        update();
+    }});
 }
 
 function setupFilter(id, key) {
     const vals = [...new Set(raw.map(x => x[key]).filter(Boolean))].sort();
     const container = document.querySelector(`#${id} .list`);
-    vals.forEach(v => {
-        container.innerHTML += `<div class="opt"><input type="checkbox" value="${v}" checked onchange="sync()"> ${v}</div>`;
-    });
+    vals.forEach(v => { container.innerHTML += `<div class="opt"><input type="checkbox" value="${v}" checked onchange="sync()"> ${v}</div>`; });
 }
 
-function filterList(id) {
+function sAll(id, el) {
+    document.querySelectorAll(`#${id} .list input`).forEach(i => i.checked = el.checked);
+    sync();
+}
+
+function fList(id) {
     const q = document.querySelector(`#${id} .search-box`).value.toLowerCase();
-    document.querySelectorAll(`#${id} .opt`).forEach(opt => {
-        const txt = opt.innerText.toLowerCase();
-        opt.style.display = txt.includes(q) ? 'flex' : 'none';
-    });
+    document.querySelectorAll(`#${id} .opt`).forEach(opt => { opt.style.display = opt.innerText.toLowerCase().includes(q) ? 'flex' : 'none'; });
 }
 
 function sync() {
-    const get = (id) => Array.from(document.querySelectorAll(`#${id} input:checked`)).map(i => i.value);
+    const get = (id) => Array.from(document.querySelectorAll(`#${id} .list input:checked`)).map(i => i.value);
     const [b, m, t, d, i] = ['b', 'm', 't', 'd', 'i'].map(get);
     filtered = raw.filter(r => b.includes(r.branch) && m.includes(r.im_descr) && t.includes(r.customer_type) && d.includes(r['Dispatch month']) && i.includes(r.installation_month));
     update();
@@ -103,53 +93,49 @@ function sync() {
 
 function toggle(id) {
     const el = document.getElementById(id);
-    const visible = el.classList.contains('show');
+    const isShow = el.classList.contains('show');
     document.querySelectorAll('.drop-content').forEach(d => d.classList.remove('show'));
-    if(!visible) el.classList.add('show');
+    if(!isShow) el.classList.add('show');
 }
 
 function update() {
-    // KPI Updates
     document.getElementById('k1').innerText = filtered.length;
-    let inst = 0, demo = 0;
-    filtered.forEach(r => { inst += parseFloat(r.installation || 0); demo += parseFloat(r.demo || 0); });
-    document.getElementById('k2').innerText = Math.round(inst);
-    document.getElementById('k3').innerText = Math.round(demo);
-    document.getElementById('k4').innerText = filtered.length - Math.round(inst);
+    let ins = 0, dem = 0;
+    filtered.forEach(r => { ins += parseFloat(r.installation || 0); dem += parseFloat(r.demo || 0); });
+    document.getElementById('k2').innerText = Math.round(ins);
+    document.getElementById('k3').innerText = Math.round(dem);
+    document.getElementById('k4').innerText = filtered.length - Math.round(ins);
 
-    // Pivot 1: Machine x Branch
-    render('c1', r => `${r.im_descr} | (${r.branch})`, 'bar', '#1f6feb');
-    
-    // Pivot 2: Customer x Branch
-    render('c2', r => `${r.party_name} | (${r.branch})`, 'bar', '#8957e5');
-    
-    // Pivot 3: Vertical Trend with Branch Context
-    render('c3', r => `${r.customer_type} - ${r['Dispatch month']} (${r.branch})`, 'line', '#238636');
-    
-    // Pivot 4: Lifecycle with Branch Context
-    render('c4', r => `D: ${r['Dispatch month']} → I: ${r.installation_month || 'N/A'} (${r.branch})`, 'bar', '#da3633');
+    // Pivot Logic: Rows (Y-Axis) vs Columns (Branch Stacked)
+    renderPivot('c1', 'im_descr');       // Machine wise
+    renderPivot('c2', 'party_name');     // Customer wise
+    renderPivot('c3', 'customer_type');  // Vertical wise
+    renderPivot('c4', 'Dispatch month'); // Month wise
 }
 
-function render(id, pivotFn, type, color) {
-    const counts = {};
-    filtered.forEach(r => { const k = pivotFn(r); counts[k] = (counts[k] || 0) + 1; });
-    const data = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
-    const ctx = document.getElementById(id).getContext('2d');
-    if(charts[id]) charts[id].destroy();
-    charts[id] = new Chart(ctx, {
-        type: type,
-        data: {
-            labels: data.map(d => d[0]),
-            datasets: [{ data: data.map(d => d[1]), backgroundColor: color, borderColor: color, borderWidth: 1 }]
-        },
+function renderPivot(canvasId, rowKey) {
+    const branches = [...new Set(filtered.map(r => r.branch))].sort();
+    const rows = [...new Set(filtered.map(r => r[rowKey]))].slice(0, 10); // Show top 10 rows for readability
+    
+    const datasets = branches.map(br => ({
+        label: br,
+        data: rows.map(row => filtered.filter(r => r[rowKey] === row && r.branch === br).length),
+        backgroundColor: branchColors[br] || '#58a6ff'
+    }));
+
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    if(charts[canvasId]) charts[canvasId].destroy();
+    charts[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: rows, datasets: datasets },
         options: {
-            indexAxis: type === 'bar' ? 'y' : 'x',
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: { legend: { position: 'top', labels: { boxWidth: 10, color: '#8b949e', font: { size: 9 } } } },
             scales: {
-                y: { ticks: { color: '#8b949e', font: { size: 9 } }, grid: { display: false } },
-                x: { ticks: { color: '#8b949e', font: { size: 9 } }, grid: { color: '#30363d' } }
+                x: { stacked: true, ticks: { color: '#8b949e', font: { size: 9 } }, grid: { color: '#30363d' } },
+                y: { stacked: true, ticks: { color: '#8b949e', font: { size: 9 } }, grid: { display: false } }
             }
         }
     });
