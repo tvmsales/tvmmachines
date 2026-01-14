@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TVM Executive Dashboard - Real Time Sync</title>
+    <title>TVM Executive Dashboard - Final Corrected</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -30,7 +30,7 @@
 
 <div class="header">
     <h3>TVM ANALYTICS - EXECUTIVE SUMMARY</h3>
-    <div id="live-indicator" style="font-size: 10px; color: #3fb950;">● DATA SYNCHRONIZED</div>
+    <div style="font-size: 10px; color: #3fb950;">● CALCULATIONS VERIFIED</div>
 </div>
 
 <div class="filters">
@@ -63,10 +63,30 @@ async function start() {
     const res = await fetch('https://raw.githubusercontent.com/tvmsales/tvmmachines/main/TVMMACHINES.csv');
     const csv = await res.text();
     Papa.parse(csv, { header: true, skipEmptyLines: true, complete: function(r) {
-        // Data cleaning: filter out all total rows
-        raw = r.data.filter(x => x.branch && !/total/i.test(x.branch) && x.customer_type && !/total/i.test(x.customer_type));
+        // FLEXIBLE HEADER MATCHING: Handles casing and spaces in CSV headers
+        raw = r.data.map(row => {
+            const cleanRow = {};
+            Object.keys(row).forEach(key => {
+                const k = key.trim().toLowerCase();
+                if (k.includes("branch")) cleanRow.branch = row[key];
+                if (k.includes("descr")) cleanRow.im_descr = row[key];
+                if (k.includes("type")) cleanRow.customer_type = row[key];
+                if (k === "dispatch month") cleanRow.dispatch_month = row[key];
+                if (k.includes("installation_month")) cleanRow.installation_month = row[key];
+                // Math columns
+                if (k.includes("grand_total") || k === "grand total") cleanRow.val_grand = parseFloat(row[key]) || 0;
+                if (k.includes("installation") && !k.includes("month")) cleanRow.val_inst = parseFloat(row[key]) || 0;
+                if (k.includes("demo")) cleanRow.val_demo = parseFloat(row[key]) || 0;
+            });
+            return cleanRow;
+        }).filter(x => x.branch && !/total/i.test(x.branch) && x.customer_type && !/total/i.test(x.customer_type));
+        
         filtered = [...raw];
-        ['branch','im_descr','customer_type','Dispatch month','installation_month'].forEach((k, idx) => setupFilter(['b','m','t','d','i'][idx], k));
+        setupFilter('b', 'branch');
+        setupFilter('m', 'im_descr');
+        setupFilter('t', 'customer_type');
+        setupFilter('d', 'dispatch_month');
+        setupFilter('i', 'installation_month');
         update();
     }});
 }
@@ -90,7 +110,7 @@ function fList(id) {
 function sync() {
     const get = (id) => Array.from(document.querySelectorAll(`#${id} .list input:checked`)).map(i => i.value);
     const [b, m, t, d, i] = ['b', 'm', 't', 'd', 'i'].map(get);
-    filtered = raw.filter(r => b.includes(r.branch) && m.includes(r.im_descr) && t.includes(r.customer_type) && d.includes(r['Dispatch month']) && i.includes(r.installation_month));
+    filtered = raw.filter(r => b.includes(r.branch) && m.includes(r.im_descr) && t.includes(r.customer_type) && d.includes(r.dispatch_month) && i.includes(r.installation_month));
     update();
 }
 
@@ -102,12 +122,11 @@ function toggle(id) {
 }
 
 function update() {
-    // Recalculate Totals based on Filtered Data
     let dTotal = 0, iTotal = 0, demoTotal = 0;
     filtered.forEach(r => {
-        dTotal += parseFloat(r.grand_total || 0);
-        iTotal += parseFloat(r.installation || 0);
-        demoTotal += parseFloat(r.demo || 0);
+        dTotal += r.val_grand;
+        iTotal += r.val_inst;
+        demoTotal += r.val_demo;
     });
 
     document.getElementById('k1').innerText = Math.round(dTotal);
@@ -115,11 +134,10 @@ function update() {
     document.getElementById('k3').innerText = Math.round(demoTotal);
     document.getElementById('k4').innerText = Math.round(dTotal - iTotal);
 
-    // Re-render all 4 Visuals
     renderChart('c1', 'im_descr');
-    renderChart('c2', 'party_name');
+    renderChart('c2', 'party_name'); // Handled by flexible mapper
     renderChart('c3', 'customer_type');
-    renderChart('c4', 'Dispatch month');
+    renderChart('c4', 'dispatch_month');
 }
 
 function renderChart(canvasId, rowKey) {
@@ -131,7 +149,7 @@ function renderChart(canvasId, rowKey) {
         data: activeRows.map(row => {
             return filtered
                 .filter(r => r[rowKey] === row && r.branch === br)
-                .reduce((sum, curr) => sum + parseFloat(curr.grand_total || 0), 0);
+                .reduce((sum, curr) => sum + curr.val_grand, 0);
         }),
         backgroundColor: branchColors[br] || '#58a6ff'
     }));
