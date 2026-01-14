@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TVM Executive Dashboard - Auditor Verified</title>
+    <title>TVM Executive Dashboard - Final Audit Version</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -30,7 +30,7 @@
 
 <div class="header">
     <h3>TVM ANALYTICS - MANAGEMENT DASHBOARD</h3>
-    <div style="font-size: 10px; color: #3fb950;">● AUDITOR VERIFIED</div>
+    <div style="font-size: 10px; color: #3fb950;">● FINAL AUDIT VERSION</div>
 </div>
 
 <div class="filters">
@@ -120,20 +120,20 @@ function toggle(id) {
 }
 
 function update() {
-    let dispatchSum = 0, installedSum = 0, demoSum = 0, pendingSum = 0;
+    let dSum = 0, iSum = 0, demoSum = 0, pSum = 0;
     filtered.forEach(r => {
         const val = r.grand_total || 0;
-        const instMonth = (r.installation_month || "").toLowerCase();
-        dispatchSum += val;
-        const isActuallyInstalled = instMonth !== "" && instMonth !== "install_date_not_entered" && instMonth !== "install_date_not_ entered";
-        if (isActuallyInstalled) installedSum += val; else pendingSum += val;
+        const im = (r.installation_month || "").toLowerCase();
+        dSum += val;
+        const isI = im !== "" && im !== "install_date_not_entered" && im !== "install_date_not_ entered";
+        if (isI) iSum += val; else pSum += val;
         if ((r.customer_type || "").toUpperCase().includes("DEMO")) demoSum += val;
     });
 
-    document.getElementById('k1').innerText = Math.round(dispatchSum);
-    document.getElementById('k2').innerText = Math.round(installedSum);
+    document.getElementById('k1').innerText = Math.round(dSum);
+    document.getElementById('k2').innerText = Math.round(iSum);
     document.getElementById('k3').innerText = Math.round(demoSum);
-    document.getElementById('k4').innerText = Math.round(pendingSum);
+    document.getElementById('k4').innerText = Math.round(pSum);
 
     renderChart('c1', 'im_descr');
     renderChart('c2', 'party_name');
@@ -153,25 +153,11 @@ function renderChart(canvasId, rowKey) {
                 .reduce((sum, curr) => sum + curr.grand_total, 0);
         }),
         backgroundColor: branchColors[br] || '#58a6ff',
-        datalabels: { color: '#000' } // BLACK LABELS INSIDE SEGMENTS
-    }));
-
-    // ADD GRAND TOTAL DATASET (HIDDEN BAR, VISIBLE LABEL)
-    datasets.push({
-        label: 'Total',
-        data: activeRows.map(row => {
-            return filtered.filter(r => r[rowKey] === row).reduce((sum, curr) => sum + curr.grand_total, 0);
-        }),
-        backgroundColor: 'transparent',
-        borderColor: 'transparent',
-        datalabels: {
-            color: '#c9d1d9',
-            anchor: 'end',
-            align: 'right',
-            offset: 5,
-            font: { weight: 'bold' }
+        datalabels: { 
+            color: '#000', // Black labels inside bar segments
+            formatter: (v) => v > 0 ? Math.round(v) : ''
         }
-    });
+    }));
 
     const ctx = document.getElementById(canvasId).getContext('2d');
     if(charts[canvasId]) charts[canvasId].destroy();
@@ -182,21 +168,48 @@ function renderChart(canvasId, rowKey) {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { right: 40 } }, // Space for the total label
             plugins: {
-                legend: { 
-                    position: 'top', 
-                    labels: { filter: (item) => item.text !== 'Total', boxWidth: 8, color: '#8b949e', font: { size: 9 } } 
-                },
+                legend: { position: 'top', labels: { boxWidth: 8, color: '#8b949e', font: { size: 9 } } },
                 datalabels: {
                     font: { weight: 'bold', size: 10 },
-                    formatter: (v) => v > 0 ? Math.round(v) : ''
+                    // Logic to show Grand Total at the end of the last visible stack
+                    display: (context) => {
+                        return true; 
+                    }
                 }
             },
             scales: {
                 x: { stacked: true, ticks: { color: '#8b949e', font: { size: 9 } }, grid: { color: '#30363d' } },
                 y: { stacked: true, ticks: { color: '#8b949e', font: { size: 9 } }, grid: { display: false } }
             }
-        }
+        },
+        plugins: [{
+            id: 'chartTotals',
+            afterDatasetsDraw(chart) {
+                const { ctx, data } = chart;
+                ctx.save();
+                ctx.font = 'bold 10px Segoe UI';
+                ctx.fillStyle = '#c9d1d9';
+                ctx.textAlign = 'left';
+
+                data.labels.forEach((label, i) => {
+                    let total = 0;
+                    let lastX = 0;
+                    data.datasets.forEach((dataset) => {
+                        total += dataset.data[i];
+                        const meta = chart.getDatasetMeta(data.datasets.indexOf(dataset));
+                        if (meta.data[i] && !meta.hidden) {
+                            lastX = Math.max(lastX, meta.data[i].x);
+                        }
+                    });
+                    if (total > 0) {
+                        ctx.fillText(Math.round(total), lastX + 5, chart.getDatasetMeta(0).data[i].y + 4);
+                    }
+                });
+                ctx.restore();
+            }
+        }]
     });
 }
 
