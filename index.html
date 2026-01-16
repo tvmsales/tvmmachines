@@ -2,244 +2,1892 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TVM MACHINES -  Dashboard </title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales MIS Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; padding: 10px; }
-        .header { background: #161b22; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
-        .filters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 10px; background: #161b22; padding: 12px; border-radius: 8px; border: 1px solid #30363d; }
-        .drop-btn { width: 100%; padding: 8px; background: #21262d; color: white; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; text-align: left; font-size: 11px; }
-        .drop-content { display: none; position: absolute; width: 220px; background: #161b22; border: 1px solid #58a6ff; z-index: 1000; max-height: 350px; overflow-y: auto; border-radius: 6px; margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); padding: 10px; }
-        .search-box { width: 100%; padding: 6px; margin-bottom: 8px; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 11px; position: sticky; top: 0; }
-        .select-all-wrap { padding: 6px; border-bottom: 1px solid #30363d; margin-bottom: 5px; font-weight: bold; color: #58a6ff; font-size: 11px; }
-        .show { display: block; }
-        .opt { padding: 6px; border-bottom: 1px solid #21262d; display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer; }
-        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
-        .card { padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        .val { font-size: 24px; display: block; font-weight: bold; }
-        .blue { background: #1f6feb; } .green { background: #238636; } .purp { background: #8957e5; } .org { background: #da3633; }
-        .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .chart-card { background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; height: 400px; overflow-y: auto; }
-        .chart-title { font-size: 11px; margin-bottom: 8px; color: #8b949e; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 4px; font-weight: bold; }
-        
-        /* Table Styles */
-        table { width: 100%; border-collapse: collapse; font-size: 12px; color: #c9d1d9; }
-        th { text-align: left; background: #21262d; padding: 10px; border: 1px solid #30363d; color: #58a6ff; }
-        td { padding: 10px; border: 1px solid #30363d; }
-        tr:nth-child(even) { background: #0d1117; }
-        .t-total { font-weight: bold; background: #238636 !important; color: white; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .designer {
+            color: #3b82f6;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .filter-group select {
+            padding: 10px 15px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-group select:hover {
+            border-color: #3b82f6;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .multi-select-container {
+            position: relative;
+        }
+
+        .multi-select-display {
+            padding: 10px 15px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .multi-select-display:hover {
+            border-color: #3b82f6;
+        }
+
+        .multi-select-display.open {
+            border-color: #3b82f6;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .multi-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            border: 2px solid #3b82f6;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .multi-select-dropdown.open {
+            display: block;
+        }
+
+        .multi-select-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .multi-select-option:hover {
+            background: #1e293b;
+        }
+
+        .multi-select-option.select-all {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            font-weight: 600;
+            color: #3b82f6;
+        }
+
+        .multi-select-option.hidden {
+            display: none;
+        }
+
+        .multi-select-option input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .multi-select-option label {
+            cursor: pointer;
+            flex: 1;
+            margin: 0;
+            color: #cbd5e1;
+        }
+
+        .multi-select-option input[type="checkbox"]:checked + label {
+            color: #3b82f6;
+            font-weight: 500;
+        }
+
+        .dropdown-arrow {
+            transition: transform 0.3s;
+        }
+
+        .dropdown-arrow.open {
+            transform: rotate(180deg);
+        }
+
+        #groupOptions {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+
+        .kpi-card.purple {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+
+        .kpi-card.pink {
+            background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+        }
+
+        .kpi-card.orange {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .kpi-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 240px;
+        }
+
+        .chart-container.tall {
+            height: 350px;
+        }
+
+        .warning-note {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 4px solid #fbbf24;
+            border-radius: 4px;
+        }
+
+        .warning-note p {
+            color: #fbbf24;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .quarter-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            background: #0f172a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .quarter-table thead {
+            background: linear-gradient(135deg, #334155 0%, #475569 100%);
+        }
+
+        .quarter-table th {
+            padding: 14px 12px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #f1f5f9;
+            font-weight: 600;
+            border-right: 1px solid #475569;
+        }
+
+        .quarter-table th:last-child {
+            border-right: none;
+        }
+
+        .quarter-table tbody tr {
+            border-bottom: 1px solid #334155;
+            transition: background 0.2s;
+        }
+
+        .quarter-table tbody tr:hover {
+            background: #1e293b;
+        }
+
+        .quarter-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .quarter-table td {
+            padding: 14px 12px;
+            text-align: center;
+            color: #cbd5e1;
+            border-right: 1px solid #334155;
+            font-size: 0.95rem;
+        }
+
+        .quarter-table td:last-child {
+            border-right: none;
+        }
+
+        .quarter-table td:first-child {
+            font-weight: 600;
+            text-align: left;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+
+        .quarter-table .q3-col {
+            background: rgba(251, 191, 36, 0.08);
+        }
+
+        .quarter-table .q4-col {
+            background: rgba(139, 92, 246, 0.08);
+        }
+
+        .growth-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 14px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .growth-positive {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .growth-negative {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        footer {
+            text-align: center;
+            color: #64748b;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #94a3b8;
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.1rem;
+            color: #ef4444;
+            background: #1e293b;
+            border-radius: 12px;
+            margin: 20px;
+        }
+
+        .error-details {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            font-family: monospace;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-card.full-width {
+                grid-column: 1;
+            }
+
+            .kpi-value {
+                font-size: 1.5rem;
+            }
+
+            .quarter-table {
+                font-size: 0.85rem;
+            }
+
+            .quarter-table th,
+            .quarter-table td {
+                padding: 10px 8px;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h1>📊 TVM-SALES Dashboard</h1>
+            <p class="subtitle">Sales Analytics and Insights</p>
+            <p class="designer">Designed by Prasad K</p>
+        </header>
 
-<div class="header">
-    <h3>TVM – MACHINE ANALYTICS - MANAGEMENT DASHBOARD</h3>
-    <div style="font-size: 10px; color: #3fb950;">● VERSION 3.0</div>
+        <div id="loading" class="loading">
+            <div>Loading your sales data...</div>
+            <div style="margin-top: 10px; font-size: 0.9rem;">Please wait...</div>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <div>⚠️ Error Loading Data</div>
+            <div class="error-details" id="errorDetails"></div>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="branchFilter">Branch</label>
+                    <select id="branchFilter" onchange="applyFilters()">
+                        <option value="All">All Branches</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="customerTypeFilter">Customer Type</label>
+                    <select id="customerTypeFilter" onchange="applyFilters()">
+                        <option value="All">All Types</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Group Description</label>
+                    <div class="multi-select-container">
+                        <div class="multi-select-display" id="groupDisplay" onclick="toggleGroupDropdown()">
+                            <span id="groupDisplayText">All Groups Selected</span>
+                            <span class="dropdown-arrow" id="groupArrow">▼</span>
+                        </div>
+                        <div class="multi-select-dropdown" id="groupDropdown">
+                            <div class="multi-select-option select-all">
+                                <input type="checkbox" id="selectAllGroups" checked onchange="toggleAllGroups()">
+                                <label for="selectAllGroups">Select All</label>
+                            </div>
+                            <div style="padding: 5px 10px; border-bottom: 1px solid #334155;">
+                                <input type="text" id="groupSearch" placeholder="Search groups..." 
+                                    style="width: 100%; padding: 5px; background: #0f172a; border: 1px solid #334155; border-radius: 4px; color: #e2e8f0; font-size: 0.85rem;"
+                                    onkeyup="searchGroups()">
+                            </div>
+                            <div id="groupOptions"></div>
+                        </div>
+                    </div>
+                </div>
+<!-- Frequency -->
+<div class="filter-group">
+  <label>Frequency</label>
+  <select id="frequencyFilter" onchange="onFrequencyChange()">
+    <option value="">Select Frequency</option>
+    <option value="Yearly">Yearly</option>
+    <option value="Half-Yearly">Half-Yearly</option>
+    <option value="Quarterly">Quarterly</option>
+  </select>
 </div>
 
-<div class="filters">
-    <div style="position:relative"><button class="drop-btn" onclick="toggle('b')">BRANCH ▼</button><div id="b" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('b')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('b', this)"> SELECT ALL</div><div class="list"></div></div></div>
-    <div style="position:relative"><button class="drop-btn" onclick="toggle('m')">MACHINE ▼</button><div id="m" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('m')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('m', this)"> SELECT ALL</div><div class="list"></div></div></div>
-    <div style="position:relative"><button class="drop-btn" onclick="toggle('t')">CUST. TYPE ▼</button><div id="t" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('t')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('t', this)"> SELECT ALL</div><div class="list"></div></div></div>
-    <div style="position:relative"><button class="drop-btn" onclick="toggle('d')">DISPATCH ▼</button><div id="d" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('d')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('d', this)"> SELECT ALL</div><div class="list"></div></div></div>
-    <div style="position:relative"><button class="drop-btn" onclick="toggle('i')">INSTALL ▼</button><div id="i" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('i')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('i', this)"> SELECT ALL</div><div class="list"></div></div></div>
-</div>
+<!-- Frequency Multi Select -->
+<div class="filter-group" id="frequencyMultiGroup" style="display:none;">
+  <label id="frequencyLabel"></label>
 
-<div class="kpis">
-    <div class="card blue">DISPATCHED <span class="val" id="k1">0</span></div>
-    <div class="card green">INSTALLED <span class="val" id="k2">0</span></div>
-    <div class="card purp">DEMOS <span class="val" id="k3">0</span></div>
-    <div class="card org">PENDING <span class="val" id="k4">0</span></div>
-</div>
-
-<div class="charts">
-    <div class="chart-card"><div id="t_c1" class="chart-title">Visual 1</div><canvas id="c1"></canvas></div>
-    <div class="chart-card"><div id="t_c2" class="chart-title">Visual 2</div><canvas id="c2"></canvas></div>
-    <div class="chart-card"><div id="t_c3" class="chart-title">Visual 3</div><canvas id="c3"></canvas></div>
-    <div class="chart-card">
-        <div class="chart-title">Machine Installation Summary (Tabular)</div>
-        <div id="table-container"></div>
+  <div class="multi-select-container">
+    <div class="multi-select-display" onclick="toggleFrequencyDropdown()">
+      <span id="frequencyDisplayText">Select</span>
+      <span class="dropdown-arrow" id="frequencyArrow">▼</span>
     </div>
+
+    <div class="multi-select-dropdown" id="frequencyDropdown">
+      <div class="multi-select-option select-all">
+        <input type="checkbox" id="selectAllFrequency" checked onchange="toggleAllFrequency()">
+        <label>Select All</label>
+      </div>
+
+      <div style="padding:6px;border-bottom:1px solid #334155">
+        <input type="text" placeholder="Search..."
+          onkeyup="searchFrequency(this.value)"
+          style="width:100%;padding:6px;background:#0f172a;border:1px solid #334155;color:#e2e8f0">
+      </div>
+
+      <div id="frequencyOptions"></div>
+    </div>
+  </div>
 </div>
+
+		
+			
+                <div class="filter-group">
+                    <label>Select Months</label>
+                    <div class="multi-select-container">
+                        <div class="multi-select-display" id="monthDisplay" onclick="toggleMonthDropdown()">
+                            <span id="monthDisplayText">All Months Selected (12)</span>
+                            <span class="dropdown-arrow" id="monthArrow">▼</span>
+                        </div>
+                        <div class="multi-select-dropdown" id="monthDropdown">
+                            <div class="multi-select-option select-all">
+                                <input type="checkbox" id="selectAllMonths" checked onchange="toggleAllMonths()">
+                                <label for="selectAllMonths">Select All</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-Apr-25" value="Apr-25" checked onchange="updateMonthSelection()">
+                                <label for="month-Apr-25">April 2025</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-May-25" value="May-25" checked onchange="updateMonthSelection()">
+                                <label for="month-May-25">May 2025</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-Jun-25" value="Jun-25" checked onchange="updateMonthSelection()">
+                                <label for="month-Jun-25">June 2025</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-Jul-25" value="Jul-25" checked onchange="updateMonthSelection()">
+                                <label for="month-Jul-25">July 2025</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-Aug-25" value="Aug-25" checked onchange="updateMonthSelection()">
+                                <label for="month-Aug-25">August 2025</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-Sep-25" value="Sep-25" checked onchange="updateMonthSelection()">
+                                <label for="month-Sep-25">September 2025</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-Oct-25" value="Oct-25" checked onchange="updateMonthSelection()">
+                                <label for="month-Oct-25">October 2025</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-Nov-25" value="Nov-25" checked onchange="updateMonthSelection()">
+                                <label for="month-Nov-25">November 2025</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-Dec-25" value="Dec-25" checked onchange="updateMonthSelection()">
+                                <label for="month-Dec-25">December 2025</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-Jan-26" value="Jan-26" checked onchange="updateMonthSelection()">
+                                <label for="month-Jan-26">January 2026</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-Feb-26" value="Feb-26" checked onchange="updateMonthSelection()">
+                                <label for="month-Feb-26">February 2026</label>
+                            </div>
+                            <div class="multi-select-option">
+                                <input type="checkbox" id="month-Mar-26" value="Mar-26" checked onchange="updateMonthSelection()">
+                                <label for="month-Mar-26">March 2026</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Party Name</label>
+                    <div class="multi-select-container">
+                        <div class="multi-select-display" id="partyDisplay" onclick="togglePartyDropdown()">
+                            <span id="partyDisplayText">All Parties Selected</span>
+                            <span class="dropdown-arrow" id="partyArrow">▼</span>
+                        </div>
+                        <div class="multi-select-dropdown" id="partyDropdown">
+                            <div class="multi-select-option select-all">
+                                <input type="checkbox" id="selectAllParties" checked onchange="toggleAllParties()">
+                                <label for="selectAllParties">Select All</label>
+                            </div>
+                            <div style="padding: 5px 10px; border-bottom: 1px solid #334155;">
+                                <input type="text" id="partySearch" placeholder="Search party name..." 
+                                    style="width: 100%; padding: 5px; background: #0f172a; border: 1px solid #334155; border-radius: 4px; color: #e2e8f0; font-size: 0.85rem;"
+                                    onkeyup="searchParties()">
+                            </div>
+                            <div id="partyOptions"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Revenue</div>
+                    <div class="kpi-value" id="totalRevenue">₹0</div>
+                </div>
+                <div class="kpi-card purple">
+                    <div class="kpi-label">Total Customers</div>
+                    <div class="kpi-value" id="totalCustomers">0</div>
+                </div>
+                <div class="kpi-card pink">
+                    <div class="kpi-label">Total Branches</div>
+                    <div class="kpi-value" id="totalBranches">0</div>
+                </div>
+                <div class="kpi-card orange">
+                    <div class="kpi-label">Avg Revenue/Customer</div>
+                    <div class="kpi-value" id="avgRevenue">₹0</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Monthly Revenue Trend</div>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Top 10 Customers</div>
+                    <div class="chart-container">
+                        <canvas id="customersChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Revenue by Branch</div>
+                    <div class="chart-container">
+                        <canvas id="branchChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Revenue by Customer Type</div>
+                    <div class="chart-container">
+                        <canvas id="customerTypeChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Customer-Monthwise Revenue</div>
+                    <div class="chart-container">
+                        <canvas id="partyMonthChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Top 10 Customer Groups</div>
+                    <div class="chart-container">
+                        <canvas id="topGroupsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card full-width">
+                    <div class="chart-title">Branch-wise Quarter Comparison (FY 2025-26)</div>
+                    <div class="chart-container tall">
+                        <canvas id="quarterChart"></canvas>
+                    </div>
+                    <div class="warning-note">
+                        <p><strong>TVM :</strong> Branchwise - Quarterwise Comparision.</p>
+                    </div>
+                    
+                    <table class="quarter-table" id="quarterTable">
+                        <thead>
+                            <tr id="quarterTableHeader">
+                            </tr>
+                        </thead>
+                        <tbody id="quarterTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Data last updated: <span id="lastUpdate"></span></p>
+        </footer>
+    </div>
 
 <script>
-Chart.register(ChartDataLabels);
-let raw = [], filtered = [], charts = {}, branchColors = { 
-    'GJ':'#FF5733', 'KA':'#33FF57', 'MH':'#3357FF', 'TL':'#F333FF', 'TN':'#33FFF3', 'UP':'#FFF333', 'WB':'#FF3380' 
+        let rawData = [];
+        let charts = {};
+        let availableMonths = [];
+
+        const ALL_MONTHS = ['Apr-25', 'May-25', 'Jun-25', 'Jul-25', 'Aug-25', 'Sep-25', 'Oct-25', 'Nov-25', 'Dec-25', 'Jan-26', 'Feb-26', 'Mar-26'];
+	const FREQUENCY_PERIODS = {
+  "Yearly": {
+    "FY 2025-26": ['Apr-25','May-25','Jun-25','Jul-25','Aug-25','Sep-25','Oct-25','Nov-25','Dec-25','Jan-26','Feb-26','Mar-26']
+  },
+  "Half-Yearly": {
+    "H1 (Apr-Sep)": ['Apr-25','May-25','Jun-25','Jul-25','Aug-25','Sep-25'],
+    "H2 (Oct-Mar)": ['Oct-25','Nov-25','Dec-25','Jan-26','Feb-26','Mar-26']
+  },
+  "Quarterly": {
+    "Q1 (Apr-Jun)": ['Apr-25','May-25','Jun-25'],
+    "Q2 (Jul-Sep)": ['Jul-25','Aug-25','Sep-25'],
+    "Q3 (Oct-Dec)": ['Oct-25','Nov-25','Dec-25'],
+    "Q4 (Jan-Mar)": ['Jan-26','Feb-26','Mar-26']
+  }
 };
 
-function parseMonth(s) {
-    if(!s || s.toLowerCase().includes("not_entered")) return new Date(2099, 0);
-    const months = {jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11};
-    const m = s.substring(0,3).toLowerCase();
-    const y = parseInt("20" + s.substring(s.length - 2));
-    return new Date(y, months[m] || 0);
-}
 
-async function start() {
-    const res = await fetch('https://raw.githubusercontent.com/tvmsales/tvmmachines/main/TVMMACHINES.csv');
-    const csv = await res.text();
-    Papa.parse(csv, { header: true, skipEmptyLines: true, complete: function(r) {
-        raw = r.data.map(row => {
-            const cleanRow = {};
-            Object.keys(row).forEach(key => {
-                const k = key.trim().toLowerCase();
-                const val = row[key] ? row[key].trim() : "";
-                if (k === "branch") cleanRow.branch = val;
-                if (k === "party_name") cleanRow.party_name = val;
-                if (k.includes("im_descr")) cleanRow.im_descr = val;
-                if (k.includes("customer_type")) cleanRow.customer_type = val;
-                if (k.includes("dispatch month")) cleanRow.dispatch_month = val;
-                if (k.includes("installation_month")) cleanRow.installation_month = val;
-                if (k.includes("grand_total") || k === "grand total") cleanRow.grand_total = parseFloat(val) || 0;
-            });
-            return cleanRow;
-        }).filter(x => x.branch && !/total/i.test(x.branch));
-        
-        setupFilter('b', 'branch');
-        setupFilter('m', 'im_descr');
-        setupFilter('t', 'customer_type');
-        setupFilter('d', 'dispatch_month', true);
-        setupFilter('i', 'installation_month', true);
-        sync();
-    }});
-}
-
-function setupFilter(id, key, isDate = false) {
-    let vals = [...new Set(raw.map(x => x[key]).filter(v => v !== ''))];
-    if (isDate) vals.sort((a, b) => parseMonth(a) - parseMonth(b)); else vals.sort();
-    const container = document.querySelector(`#${id} .list`);
-    vals.forEach(v => { container.innerHTML += `<div class="opt"><input type="checkbox" value="${v}" checked onchange="sync()"> ${v}</div>`; });
-}
-
-function sAll(id, el) {
-    document.querySelectorAll(`#${id} .list input`).forEach(i => i.checked = el.checked);
-    sync();
-}
-
-function fList(id) {
-    const q = document.querySelector(`#${id} .search-box`).value.toLowerCase();
-    document.querySelectorAll(`#${id} .opt`).forEach(opt => { opt.style.display = opt.innerText.toLowerCase().includes(q) ? 'flex' : 'none'; });
-}
-
-function sync() {
-    const get = (id) => Array.from(document.querySelectorAll(`#${id} .list input:checked`)).map(i => i.value);
-    const [b, m, t, d, i] = ['b', 'm', 't', 'd', 'i'].map(get);
-    filtered = raw.filter(r => b.includes(r.branch) && m.includes(r.im_descr) && t.includes(r.customer_type) && d.includes(r.dispatch_month) && i.includes(r.installation_month));
-    update();
-}
-
-function toggle(id) {
-    const el = document.getElementById(id);
-    const show = el.classList.contains('show');
-    document.querySelectorAll('.drop-content').forEach(d => d.classList.remove('show'));
-    if(!show) el.classList.add('show');
-}
-
-function update() {
-    let dSum = 0, iSum = 0, demoSum = 0, pSum = 0;
-    const monthlyStats = {};
-
-    filtered.forEach(r => {
-        const val = r.grand_total || 0;
-        const im = (r.installation_month || "").toLowerCase();
-        const dm = r.dispatch_month || "Unknown";
-        
-        dSum += val;
-        if (!monthlyStats[dm]) monthlyStats[dm] = { disp: 0, inst: 0, pend: 0 };
-        monthlyStats[dm].disp += val;
-
-        const isI = im !== "" && im !== "install_date_not_entered" && im !== "install_date_not_ entered";
-        if (isI) {
-            iSum += val;
-            monthlyStats[dm].inst += val;
-        } else {
-            pSum += val;
-            monthlyStats[dm].pend += val;
-        }
-        if ((r.customer_type || "").toUpperCase().includes("DEMO")) demoSum += val;
-    });
-
-    document.getElementById('k1').innerText = Math.round(dSum);
-    document.getElementById('k2').innerText = Math.round(iSum);
-    document.getElementById('k3').innerText = Math.round(demoSum);
-    document.getElementById('k4').innerText = Math.round(pSum);
-
-    renderChart('c1', 'im_descr', 'Machine wise (by Branch)');
-    renderChart('c2', 'party_name', 'Customer wise (by Branch)');
-    renderChart('c3', 'customer_type', 'Vertical Trends (by Branch)');
-    renderTable(monthlyStats);
-}
-
-function renderTable(data) {
-    const sortedMonths = Object.keys(data).sort((a, b) => parseMonth(a) - parseMonth(b));
-    let html = `<table><thead><tr><th>Dispatch Month</th><th>Dispatched</th><th>Installed</th><th>Pending</th></tr></thead><tbody>`;
-    let tD = 0, tI = 0, tP = 0;
-
-    sortedMonths.forEach(m => {
-        const d = data[m];
-        tD += d.disp; tI += d.inst; tP += d.pend;
-        html += `<tr><td>${m}</td><td>${Math.round(d.disp)}</td><td>${Math.round(d.inst)}</td><td>${Math.round(d.pend)}</td></tr>`;
-    });
-
-    html += `<tr class="t-total"><td>GRAND TOTAL</td><td>${Math.round(tD)}</td><td>${Math.round(tI)}</td><td>${Math.round(tP)}</td></tr>`;
-    html += `</tbody></table>`;
-    document.getElementById('table-container').innerHTML = html;
-}
-
-function renderChart(canvasId, rowKey, baseTitle) {
-    const selectedBranches = Array.from(document.querySelectorAll('#b .list input:checked')).map(i => i.value).sort();
-    const rowTotals = {};
-    filtered.forEach(r => {
-        const key = r[rowKey];
-        if (key) rowTotals[key] = (rowTotals[key] || 0) + r.grand_total;
-    });
-    const activeRows = Object.keys(rowTotals).sort((a, b) => rowTotals[b] - rowTotals[a]).slice(0, 10);
-    document.getElementById('t_' + canvasId).innerText = `Top ${activeRows.length} ${baseTitle}`;
-
-    const datasets = selectedBranches.map(br => ({
-        label: br,
-        data: activeRows.map(row => filtered.filter(r => r[rowKey] === row && r.branch === br).reduce((s, c) => s + c.grand_total, 0)),
-        backgroundColor: branchColors[br] || '#58a6ff',
-        datalabels: { color: '#000', formatter: (v) => v > 0 ? Math.round(v) : '' }
-    }));
-
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    if(charts[canvasId]) charts[canvasId].destroy();
-    charts[canvasId] = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: activeRows, datasets: datasets },
-        options: {
-            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-            layout: { padding: { right: 40 } },
-            plugins: {
-                legend: { position: 'top', labels: { boxWidth: 8, color: '#8b949e', font: { size: 9 } } },
-                datalabels: { font: { weight: 'bold', size: 10 } }
-            },
-            scales: {
-                x: { stacked: true, ticks: { color: '#8b949e', font: { size: 9 } }, grid: { color: '#30363d' } },
-                y: { stacked: true, ticks: { color: '#8b949e', font: { size: 9 } }, grid: { display: false } }
-            }
-        },
-        plugins: [{
-            id: 'chartTotals',
-            afterDatasetsDraw(chart) {
-                const { ctx, data } = chart;
-                ctx.save(); ctx.font = 'bold 10px Segoe UI'; ctx.fillStyle = '#c9d1d9';
-                data.labels.forEach((l, i) => {
-                    let tot = 0, lX = 0;
-                    data.datasets.forEach(ds => { tot += ds.data[i]; const m = chart.getDatasetMeta(data.datasets.indexOf(ds)); if (m.data[i]) lX = Math.max(lX, m.data[i].x); });
-                    if (tot > 0) ctx.fillText(Math.round(tot), lX + 5, chart.getDatasetMeta(0).data[i].y + 4);
+        async function loadData() {
+            const csvFileName = 'SALESMIS.csv';
+            
+            try {
+                console.log('Loading:', csvFileName);
+                
+                const response = await fetch(csvFileName);
+                
+                if (!response.ok) {
+                    throw new Error(`File not found: ${csvFileName}`);
+                }
+                
+                const csvText = await response.text();
+                console.log('CSV loaded, size:', csvText.length);
+                
+                Papa.parse(csvText, {
+                    header: true,
+                    dynamicTyping: false,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        console.log('Parsed rows:', results.data.length);
+                        console.log('First row:', results.data[0]);
+                        
+                        if (results.data.length === 0) {
+                            showError('CSV file has no data');
+                            return;
+                        }
+                        
+                        rawData = results.data;
+                        detectAvailableMonths();
+                        initializeDashboard();
+                    },
+                    error: function(error) {
+                        showError('Parse error: ' + error.message);
+                    }
                 });
-                ctx.restore();
+            } catch (error) {
+                showError(error.message);
             }
-        }]
-    });
+        }
+
+        function detectAvailableMonths() {
+            if (rawData.length === 0) return;
+            
+            const firstRow = rawData[0];
+            availableMonths = ALL_MONTHS.filter(month => {
+                return firstRow.hasOwnProperty(month);
+            });
+            
+            console.log('Available months in CSV:', availableMonths);
+        }
+
+        function hasDataForMonth(month) {
+            if (!availableMonths.includes(month)) return false;
+            
+            for (let row of rawData) {
+                const val = parseFloat(String(row[month] || '0').replace(/,/g, ''));
+                if (!isNaN(val) && val > 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function getQuarterInfo() {
+            const q1Months = ['Apr-25', 'May-25', 'Jun-25'];
+            const q2Months = ['Jul-25', 'Aug-25', 'Sep-25'];
+            const q3Months = ['Oct-25', 'Nov-25', 'Dec-25'];
+            const q4Months = ['Jan-26', 'Feb-26', 'Mar-26'];
+
+            const q3Available = q3Months.filter(m => availableMonths.includes(m));
+            const q4Available = q4Months.filter(m => availableMonths.includes(m));
+
+            const q3HasDec = hasDataForMonth('Dec-25');
+            const q4HasData = q4Available.some(m => hasDataForMonth(m));
+
+            return {
+                q1: { months: q1Months, label: 'Q1 (Apr-Jun 25)', periodLabel: 'Apr-Jun 25' },
+                q2: { months: q2Months, label: 'Q2 (Jul-Sep 25)', periodLabel: 'Jul-Sep 25' },
+                q3: { 
+                    months: q3Available, 
+                    label: q3HasDec ? 'Q3 (Oct-Dec 25)' : 'Q3 (Oct-Nov 25)',
+                    isPartial: !q3HasDec,
+                    periodLabel: q3HasDec ? 'Oct-Dec 25' : 'Oct-Nov 25'
+                },
+                q4: { 
+                    months: q4Months, 
+                    label: 'Q4 (Jan-Mar 26)',
+                    hasData: q4HasData,
+                    periodLabel: 'Jan-Mar 26'
+                }
+            };
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('errorDetails').innerHTML = message;
+        }
+
+        function initializeDashboard() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            
+            populateFilters();
+            updateDashboard();
+            onFrequencyChange();
+
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('en-IN');
+        }
+
+        function populateFilters() {
+            const branches = ['All', ...new Set(rawData
+                .map(d => d.Branch)
+                .filter(b => b && !b.includes('SUBTOTAL') && !b.includes('GRAND TOTAL'))
+            )];
+            
+            const customerTypes = ['All', ...new Set(rawData.map(d => d.Customer_Type).filter(Boolean))];
+            const groupDescriptions = [...new Set(rawData.map(d => d.Group_Description).filter(Boolean))].sort();
+            const partyNames = [...new Set(rawData.map(d => d.Party_name).filter(Boolean))].sort();
+
+            populateSelect('branchFilter', branches);
+            populateSelect('customerTypeFilter', customerTypes);
+            populateGroupFilter(groupDescriptions);
+            populatePartyFilter(partyNames);
+        }
+
+        function populateGroupFilter(groups) {
+            const container = document.getElementById('groupOptions');
+            container.innerHTML = '';
+            
+            groups.forEach(group => {
+                const div = document.createElement('div');
+                div.className = 'multi-select-option group-option';
+                div.innerHTML = `
+                    <input type="checkbox" id="group-${group}" value="${group}" checked onchange="updateGroupSelection()">
+                    <label for="group-${group}">${group}</label>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+function onFrequencyChange() {
+  const freq = document.getElementById('frequencyFilter').value;
+  const group = document.getElementById('frequencyMultiGroup');
+  const optionsDiv = document.getElementById('frequencyOptions');
+
+  // ✅ CLOSE dependent dropdown immediately
+  closeFrequencyDropdown();
+
+  if (!freq) {
+    group.style.display = 'none';
+    return;
+  }
+
+  group.style.display = 'block';
+  document.getElementById('frequencyLabel').innerText = `Select ${freq}`;
+  optionsDiv.innerHTML = '';
+
+  Object.keys(FREQUENCY_PERIODS[freq]).forEach(p => {
+    optionsDiv.innerHTML += `
+      <div class="multi-select-option freq-option">
+        <input type="checkbox" value="${p}" checked onchange="onFrequencyOptionChange()">
+        <label>${p}</label>
+      </div>
+    `;
+  });
+
+  updateFrequencyDisplay();
+  applyFilters();
 }
-start();
+
+
+function onFrequencyOptionChange() {
+  updateFrequencySelection();
+  closeFrequencyDropdown(); // ✅ auto close after selection
+}
+
+
+function closeFrequencyDropdown() {
+  const dropdown = document.getElementById('frequencyDropdown');
+  const arrow = document.getElementById('frequencyArrow');
+
+  if (dropdown) dropdown.classList.remove('open');
+  if (arrow) arrow.classList.remove('open');
+}
+
+
+
+
+        function toggleGroupDropdown() {
+            const dropdown = document.getElementById('groupDropdown');
+            const display = document.getElementById('groupDisplay');
+            const arrow = document.getElementById('groupArrow');
+            
+            dropdown.classList.toggle('open');
+            display.classList.toggle('open');
+            arrow.classList.toggle('open');
+        }
+
+        function toggleAllGroups() {
+            const selectAll = document.getElementById('selectAllGroups');
+            const checkboxes = document.querySelectorAll('#groupOptions input[type="checkbox"]');
+            
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+            });
+            
+            updateGroupDisplayText();
+            applyFilters();
+        }
+
+        function updateGroupSelection() {
+            const checkboxes = document.querySelectorAll('#groupOptions input[type="checkbox"]');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            document.getElementById('selectAllGroups').checked = allChecked;
+            updateGroupDisplayText();
+            applyFilters();
+        }
+
+        function updateGroupDisplayText() {
+            const checkboxes = document.querySelectorAll('#groupOptions input[type="checkbox"]');
+            const checked = Array.from(checkboxes).filter(cb => cb.checked);
+            const displayText = document.getElementById('groupDisplayText');
+            const total = checkboxes.length;
+            
+            if (checked.length === 0) {
+                displayText.textContent = 'No Groups Selected';
+                displayText.style.color = '#ef4444';
+            } else if (checked.length === total) {
+                displayText.textContent = `All Groups Selected (${total})`;
+                displayText.style.color = '#e2e8f0';
+            } else {
+                displayText.textContent = `${checked.length} of ${total} Groups Selected`;
+                displayText.style.color = '#3b82f6';
+            }
+        }
+
+        function searchGroups() {
+            const searchInput = document.getElementById('groupSearch');
+            const filter = searchInput.value.toUpperCase();
+            const options = document.querySelectorAll('.group-option');
+            
+            options.forEach(option => {
+                const label = option.querySelector('label');
+                const text = label.textContent || label.innerText;
+                if (text.toUpperCase().indexOf(filter) > -1) {
+                    option.classList.remove('hidden');
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
+        }
+
+        function getSelectedGroups() {
+            const checkboxes = document.querySelectorAll('#groupOptions input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        function populatePartyFilter(parties) {
+            const container = document.getElementById('partyOptions');
+            container.innerHTML = '';
+            
+            parties.forEach(party => {
+                const div = document.createElement('div');
+                div.className = 'multi-select-option party-option';
+                div.innerHTML = `
+                    <input type="checkbox" id="party-${party}" value="${party}" checked onchange="updatePartySelection()">
+                    <label for="party-${party}">${party}</label>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function togglePartyDropdown() {
+            const dropdown = document.getElementById('partyDropdown');
+            const display = document.getElementById('partyDisplay');
+            const arrow = document.getElementById('partyArrow');
+            
+            dropdown.classList.toggle('open');
+            display.classList.toggle('open');
+            arrow.classList.toggle('open');
+        }
+
+        function toggleAllParties() {
+            const selectAll = document.getElementById('selectAllParties');
+            const checkboxes = document.querySelectorAll('#partyOptions input[type="checkbox"]');
+            
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+            });
+            
+            updatePartyDisplayText();
+            applyFilters();
+        }
+
+
+function toggleFrequencyDropdown() {
+  const dropdown = document.getElementById('frequencyDropdown');
+  const arrow = document.getElementById('frequencyArrow');
+
+  dropdown.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+
+function toggleAllFrequency() {
+  document.querySelectorAll('.freq-option input')
+    .forEach(cb => cb.checked = selectAllFrequency.checked);
+  updateFrequencyDisplay();
+  applyFilters();
+}
+
+function updateFrequencySelection() {
+  const all = [...document.querySelectorAll('.freq-option input')]
+    .every(cb => cb.checked);
+  selectAllFrequency.checked = all;
+  updateFrequencyDisplay();
+  applyFilters();
+}
+
+function updateFrequencyDisplay() {
+  const checked = document.querySelectorAll('.freq-option input:checked');
+  const total = document.querySelectorAll('.freq-option input').length;
+
+  if (checked.length === 0)
+    frequencyDisplayText.innerText = 'None Selected';
+  else if (checked.length === total)
+    frequencyDisplayText.innerText = `All Selected (${total})`;
+  else
+    frequencyDisplayText.innerText = `${checked.length} Selected`;
+}
+
+function searchFrequency(val) {
+  document.querySelectorAll('.freq-option').forEach(opt => {
+    opt.style.display = opt.innerText.toLowerCase().includes(val.toLowerCase())
+      ? 'flex' : 'none';
+  });
+}
+
+
+        function updatePartySelection() {
+            const checkboxes = document.querySelectorAll('#partyOptions input[type="checkbox"]');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            document.getElementById('selectAllParties').checked = allChecked;
+            updatePartyDisplayText();
+            applyFilters();
+        }
+
+        function updatePartyDisplayText() {
+            const checkboxes = document.querySelectorAll('#partyOptions input[type="checkbox"]');
+            const checked = Array.from(checkboxes).filter(cb => cb.checked);
+            const displayText = document.getElementById('partyDisplayText');
+            const total = checkboxes.length;
+            
+            if (checked.length === 0) {
+                displayText.textContent = 'No Parties Selected';
+                displayText.style.color = '#ef4444';
+            } else if (checked.length === total) {
+                displayText.textContent = `All Parties Selected (${total})`;
+                displayText.style.color = '#e2e8f0';
+            } else {
+                displayText.textContent = `${checked.length} of ${total} Parties Selected`;
+                displayText.style.color = '#3b82f6';
+            }
+        }
+
+        function searchParties() {
+            const searchInput = document.getElementById('partySearch');
+            const filter = searchInput.value.toUpperCase();
+            const options = document.querySelectorAll('.party-option');
+            
+            options.forEach(option => {
+                const label = option.querySelector('label');
+                const text = label.textContent || label.innerText;
+                if (text.toUpperCase().indexOf(filter) > -1) {
+                    option.classList.remove('hidden');
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
+        }
+
+        function getSelectedParties() {
+            const checkboxes = document.querySelectorAll('#partyOptions input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        function populateSelect(id, options) {
+            const select = document.getElementById(id);
+            select.innerHTML = options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+        }
+
+        function applyFilters() {
+            updateDashboard();
+        }
+
+        function getFilteredData() {
+            const branch = document.getElementById('branchFilter').value;
+            const customerType = document.getElementById('customerTypeFilter').value;
+            const selectedGroups = getSelectedGroups();
+            const selectedParties = getSelectedParties();
+
+            return rawData.filter(row => {
+                if (row.Branch && (row.Branch.includes('SUBTOTAL') || row.Branch.includes('GRAND TOTAL'))) {
+                    return false;
+                }
+                
+                if (branch !== 'All' && row.Branch !== branch) return false;
+                if (customerType !== 'All' && row.Customer_Type !== customerType) return false;
+                
+                if (selectedGroups.length > 0 && !selectedGroups.includes(row.Group_Description)) {
+                    return false;
+                }
+
+                if (selectedParties.length > 0 && !selectedParties.includes(row.Party_name)) {
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+
+        function getSelectedMonths() {
+  const freq = frequencyFilter.value;
+  if (!freq) return ALL_MONTHS;
+
+  const selectedPeriods = [...document.querySelectorAll('.freq-option input:checked')]
+    .map(cb => cb.value);
+
+  let months = [];
+  selectedPeriods.forEach(p => {
+    months = months.concat(FREQUENCY_PERIODS[freq][p]);
+  });
+
+  return [...new Set(months)];
+}
+
+
+        function toggleMonthDropdown() {
+            const dropdown = document.getElementById('monthDropdown');
+            const display = document.getElementById('monthDisplay');
+            const arrow = document.getElementById('monthArrow');
+            
+            dropdown.classList.toggle('open');
+            display.classList.toggle('open');
+            arrow.classList.toggle('open');
+        }
+
+        function toggleAllMonths() {
+            const selectAll = document.getElementById('selectAllMonths');
+            
+            ALL_MONTHS.forEach(month => {
+                const checkbox = document.getElementById(`month-${month}`);
+                if (checkbox) checkbox.checked = selectAll.checked;
+            });
+            
+            updateMonthDisplayText();
+            applyFilters();
+        }
+
+        function updateMonthSelection() {
+            const allChecked = ALL_MONTHS.every(month => {
+                const checkbox = document.getElementById(`month-${month}`);
+                return checkbox && checkbox.checked;
+            });
+            
+            document.getElementById('selectAllMonths').checked = allChecked;
+            updateMonthDisplayText();
+            applyFilters();
+        }
+
+        function updateMonthDisplayText() {
+            const selectedMonths = getSelectedMonths();
+            const displayText = document.getElementById('monthDisplayText');
+            
+            if (selectedMonths.length === 0) {
+                displayText.textContent = 'No Months Selected';
+                displayText.style.color = '#ef4444';
+            } else if (selectedMonths.length === 12) {
+                displayText.textContent = 'All Months Selected (12)';
+                displayText.style.color = '#e2e8f0';
+            } else {
+                displayText.textContent = `${selectedMonths.length} Month${selectedMonths.length > 1 ? 's' : ''} Selected`;
+                displayText.style.color = '#3b82f6';
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const monthContainer = document.getElementById('monthDisplay')?.parentElement;
+            if (monthContainer && !monthContainer.contains(event.target)) {
+                const dropdown = document.getElementById('monthDropdown');
+                const display = document.getElementById('monthDisplay');
+                const arrow = document.getElementById('monthArrow');
+                
+                if (dropdown) dropdown.classList.remove('open');
+                if (display) display.classList.remove('open');
+                if (arrow) arrow.classList.remove('open');
+            }
+            
+            const groupContainer = document.getElementById('groupDisplay')?.parentElement;
+            if (groupContainer && !groupContainer.contains(event.target)) {
+                const dropdown = document.getElementById('groupDropdown');
+                const display = document.getElementById('groupDisplay');
+                const arrow = document.getElementById('groupArrow');
+                
+                if (dropdown) dropdown.classList.remove('open');
+                if (display) display.classList.remove('open');
+                if (arrow) arrow.classList.remove('open');
+            }
+
+            const partyContainer = document.getElementById('partyDisplay')?.parentElement;
+            if (partyContainer && !partyContainer.contains(event.target)) {
+                const dropdown = document.getElementById('partyDropdown');
+                const display = document.getElementById('partyDisplay');
+                const arrow = document.getElementById('partyArrow');
+                
+                if (dropdown) dropdown.classList.remove('open');
+                if (display) display.classList.remove('open');
+                if (arrow) arrow.classList.remove('open');
+            }
+
+
+	// ✅ Close Frequency dropdown on outside click
+const freqContainer = document
+  .getElementById('frequencyMultiGroup')
+  ?.querySelector('.multi-select-container');
+
+if (freqContainer && !freqContainer.contains(event.target)) {
+  closeFrequencyDropdown();
+}
+
+        });
+
+        function updateDashboard() {
+            const data = getFilteredData();
+            updateKPIs(data);
+            updateCharts(data);
+        }
+
+        function updateKPIs(data) {
+            const selectedMonths = getSelectedMonths();
+            
+            const totalRevenue = data.reduce((sum, row) => {
+                const monthRevenue = selectedMonths.reduce((monthSum, month) => {
+                    const val = parseFloat(String(row[month] || '0').replace(/,/g, ''));
+                    return monthSum + (isNaN(val) ? 0 : val);
+                }, 0);
+                return sum + monthRevenue;
+            }, 0);
+            
+            const uniqueCustomers = new Set(data.map(d => d.Party_no).filter(Boolean)).size;
+            const uniqueBranches = new Set(data.map(d => d.Branch).filter(Boolean)).size;
+            const avgRevenue = uniqueCustomers > 0 ? totalRevenue / uniqueCustomers : 0;
+
+            document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
+            document.getElementById('totalCustomers').textContent = formatNumber(uniqueCustomers);
+            document.getElementById('totalBranches').textContent = formatNumber(uniqueBranches);
+            document.getElementById('avgRevenue').textContent = formatCurrency(avgRevenue);
+        }
+
+        function updateCharts(data) {
+            updateRevenueChart(data);
+            updateCustomersChart(data);
+            updateBranchChart(data);
+            updateCustomerTypeChart(data);
+            updatePartyMonthChart(data);
+            updateTopGroupsChart(data);
+            updateQuarterChart(data);
+        }
+
+        function updateRevenueChart(data) {
+            const selectedMonths = getSelectedMonths();
+            const revenues = selectedMonths.map(month => {
+                return data.reduce((sum, row) => {
+                    const val = parseFloat(String(row[month] || '0').replace(/,/g, ''));
+                    return sum + (isNaN(val) ? 0 : val);
+                }, 0);
+            });
+
+            if (charts.revenue) charts.revenue.destroy();
+
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            charts.revenue = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: selectedMonths,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: revenues,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => formatCurrency(context.parsed.y)
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: (value) => '₹' + (value / 100000).toFixed(1) + 'L'
+                            },
+                            grid: { color: '#334155' }
+                        },
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCustomersChart(data) {
+            const selectedMonths = getSelectedMonths();
+            const customerRevenue = {};
+            
+            data.forEach(row => {
+                const name = row.Party_name;
+                if (name) {
+                    if (!customerRevenue[name]) customerRevenue[name] = 0;
+                    selectedMonths.forEach(month => {
+                        const val = parseFloat(String(row[month] || '0').replace(/,/g, ''));
+                        customerRevenue[name] += isNaN(val) ? 0 : val;
+                    });
+                }
+            });
+
+            const sorted = Object.entries(customerRevenue)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            if (charts.customers) charts.customers.destroy();
+
+            const ctx = document.getElementById('customersChart').getContext('2d');
+            charts.customers = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(([name]) => name),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: sorted.map(([, revenue]) => revenue),
+                        backgroundColor: '#8b5cf6'
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (context) => context[0].label,
+                                label: (context) => formatCurrency(context.parsed.x)
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 9 },
+                                callback: (value) => '₹' + (value / 100000).toFixed(1) + 'L'
+                            },
+                            grid: { color: '#334155' }
+                        },
+                        y: {
+                            ticks: { 
+                                color: '#94a3b8', 
+                                font: { size: 9 },
+                                autoSkip: false,
+                                crossAlign: 'far'
+                            },
+                            grid: { display: false }
+                        }
+                    }
+                },
+                plugins: [{
+                    afterDatasetsDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        const meta = chart.getDatasetMeta(0);
+                        meta.data.forEach((bar, index) => {
+                            const data = chart.data.datasets[0].data[index];
+                            ctx.fillStyle = '#fff';
+                            ctx.font = 'bold 10px sans-serif';
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText((data / 100000).toFixed(1) + ' L', bar.x + 5, bar.y);
+                        });
+                    }
+                }]
+            });
+        }
+
+        function updateBranchChart(data) {
+            const selectedMonths = getSelectedMonths();
+            const branchRevenue = {};
+            
+            data.forEach(row => {
+                const branch = row.Branch || 'Unknown';
+                if (!branchRevenue[branch]) branchRevenue[branch] = 0;
+                selectedMonths.forEach(month => {
+                    const val = parseFloat(String(row[month] || '0').replace(/,/g, ''));
+                    branchRevenue[branch] += isNaN(val) ? 0 : val;
+                });
+            });
+
+            const sorted = Object.entries(branchRevenue).sort((a, b) => b[1] - a[1]);
+
+            if (charts.branch) charts.branch.destroy();
+
+            const ctx = document.getElementById('branchChart').getContext('2d');
+            const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#f43f5e', '#14b8a6'];
+            
+            charts.branch = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: sorted.map(([name]) => name),
+                    datasets: [{
+                        data: sorted.map(([, revenue]) => revenue),
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#94a3b8', padding: 15, font: { size: 11 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    const label = context.label || '';
+                                    const value = formatCurrency(context.parsed);
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCustomerTypeChart(data) {
+            const selectedMonths = getSelectedMonths();
+            const typeRevenue = {};
+            
+            data.forEach(row => {
+                const type = row.Customer_Type || 'Unknown';
+                if (!typeRevenue[type]) typeRevenue[type] = 0;
+                selectedMonths.forEach(month => {
+                    const val = parseFloat(String(row[month] || '0').replace(/,/g, ''));
+                    typeRevenue[type] += isNaN(val) ? 0 : val;
+                });
+            });
+
+            const sorted = Object.entries(typeRevenue).sort((a, b) => b[1] - a[1]);
+
+            if (charts.customerType) charts.customerType.destroy();
+
+            const ctx = document.getElementById('customerTypeChart').getContext('2d');
+            charts.customerType = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(([name]) => name),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: sorted.map(([, revenue]) => revenue),
+                        backgroundColor: '#ec4899'
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => formatCurrency(context.parsed.x)
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 10 },
+                                callback: (value) => '₹' + (value / 100000).toFixed(1) + 'L'
+                            },
+                            grid: { color: '#334155' }
+                        },
+                        y: {
+                            ticks: { 
+                                color: '#94a3b8',
+                                font: { size: 10 },
+                                mirror: false,
+                                padding: 5
+                            },
+                            grid: { display: false }
+                        }
+                    }
+                },
+                plugins: [{
+                    afterDatasetsDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        const meta = chart.getDatasetMeta(0);
+                        meta.data.forEach((bar, index) => {
+                            const data = chart.data.datasets[0].data[index];
+                            ctx.fillStyle = '#fff';
+                            ctx.font = 'bold 10px sans-serif';
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText((data / 100000).toFixed(1) + ' L', bar.x + 5, bar.y);
+                        });
+                    }
+                }]
+            });
+        }
+
+        function updatePartyMonthChart(data) {
+            const selectedMonths = getSelectedMonths();
+            const selectedParties = getSelectedParties();
+            
+            const monthRevenue = {};
+            selectedMonths.forEach(month => {
+                monthRevenue[month] = 0;
+            });
+
+            data.forEach(row => {
+                if (selectedParties.includes(row.Party_name)) {
+                    selectedMonths.forEach(month => {
+                        const val = parseFloat(String(row[month] || '0').replace(/,/g, ''));
+                        monthRevenue[month] += isNaN(val) ? 0 : val;
+                    });
+                }
+            });
+
+            const chartData = selectedMonths.map(month => monthRevenue[month]);
+
+            if (charts.partyMonth) charts.partyMonth.destroy();
+
+            const ctx = document.getElementById('partyMonthChart').getContext('2d');
+            charts.partyMonth = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: selectedMonths,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: chartData,
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => formatCurrency(context.parsed.y)
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 10 },
+                                callback: (value) => '₹' + (value / 100000).toFixed(1) + 'L'
+                            },
+                            grid: { color: '#334155' }
+                        },
+                        x: {
+                            ticks: { 
+                                color: '#94a3b8',
+                                font: { size: 10 }
+                            },
+                            grid: { display: false }
+                        }
+                    }
+                },
+                plugins: [{
+                    afterDatasetsDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        const meta = chart.getDatasetMeta(0);
+                        meta.data.forEach((bar, index) => {
+                            const data = chart.data.datasets[0].data[index];
+                            ctx.fillStyle = '#fff';
+                            ctx.font = 'bold 10px sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.fillText((data / 100000).toFixed(1) + ' L', bar.x, bar.y - 5);
+                        });
+                    }
+                }]
+            });
+        }
+
+        function updateTopGroupsChart(data) {
+            const selectedMonths = getSelectedMonths();
+            const groupRevenue = {};
+            
+            data.forEach(row => {
+                const group = row.Group_Description;
+                if (group) {
+                    if (!groupRevenue[group]) groupRevenue[group] = 0;
+                    selectedMonths.forEach(month => {
+                        const val = parseFloat(String(row[month] || '0').replace(/,/g, ''));
+                        groupRevenue[group] += isNaN(val) ? 0 : val;
+                    });
+                }
+            });
+
+            const sorted = Object.entries(groupRevenue)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            if (charts.topGroups) charts.topGroups.destroy();
+
+            const ctx = document.getElementById('topGroupsChart').getContext('2d');
+            charts.topGroups = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(([name]) => name),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: sorted.map(([, revenue]) => revenue),
+                        backgroundColor: '#06b6d4'
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (context) => context[0].label,
+                                label: (context) => formatCurrency(context.parsed.x)
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 9 },
+                                callback: (value) => '₹' + (value / 100000).toFixed(1) + 'L'
+                            },
+                            grid: { color: '#334155' }
+                        },
+                        y: {
+                            ticks: { 
+                                color: '#94a3b8', 
+                                font: { size: 9 },
+                                autoSkip: false,
+                                crossAlign: 'far'
+                            },
+                            grid: { display: false }
+                        }
+                    }
+                },
+                plugins: [{
+                    afterDatasetsDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        const meta = chart.getDatasetMeta(0);
+                        meta.data.forEach((bar, index) => {
+                            const data = chart.data.datasets[0].data[index];
+                            ctx.fillStyle = '#fff';
+                            ctx.font = 'bold 10px sans-serif';
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText((data / 100000).toFixed(1) + ' L', bar.x + 5, bar.y);
+                        });
+                    }
+                }]
+            });
+        }
+
+function getSelectedQuarters() {
+  const freq = document.getElementById('frequencyFilter').value;
+
+  if (freq !== 'Quarterly') {
+    return ['Q1', 'Q2', 'Q3', 'Q4']; // default behavior
+  }
+
+  return [...document.querySelectorAll('.freq-option input:checked')]
+    .map(cb => cb.value.split(' ')[0]); // "Q1 (Apr-Jun)" → Q1
+}
+
+
+
+ function updateQuarterChart(data) {
+  const quarterInfo = getQuarterInfo();
+  const selectedQuarters = getSelectedQuarters();
+  const branchQuarters = {};
+
+  data.forEach(row => {
+    const branch = row.Branch || 'Unknown';
+    if (!branchQuarters[branch]) {
+      branchQuarters[branch] = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
+    }
+
+    if (selectedQuarters.includes('Q1')) {
+      quarterInfo.q1.months.forEach(m => {
+        branchQuarters[branch].Q1 += parseFloat(String(row[m] || 0).replace(/,/g, '')) || 0;
+      });
+    }
+
+    if (selectedQuarters.includes('Q2')) {
+      quarterInfo.q2.months.forEach(m => {
+        branchQuarters[branch].Q2 += parseFloat(String(row[m] || 0).replace(/,/g, '')) || 0;
+      });
+    }
+
+    if (selectedQuarters.includes('Q3')) {
+      quarterInfo.q3.months.forEach(m => {
+        branchQuarters[branch].Q3 += parseFloat(String(row[m] || 0).replace(/,/g, '')) || 0;
+      });
+    }
+
+    if (selectedQuarters.includes('Q4')) {
+      quarterInfo.q4.months.forEach(m => {
+        branchQuarters[branch].Q4 += parseFloat(String(row[m] || 0).replace(/,/g, '')) || 0;
+      });
+    }
+  });
+
+  const datasets = [];
+  const colors = { Q1:'#3b82f6', Q2:'#8b5cf6', Q3:'#ec4899', Q4:'#f59e0b' };
+
+  selectedQuarters.forEach(q => {
+    datasets.push({
+      label: quarterInfo[q.toLowerCase()].label,
+      data: Object.values(branchQuarters).map(v => (v[q] / 100000)),
+      backgroundColor: colors[q]
+    });
+  });
+
+  if (charts.quarter) charts.quarter.destroy();
+
+  charts.quarter = new Chart(document.getElementById('quarterChart'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(branchQuarters),
+      datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: v => v + ' L' }
+        }
+      }
+    }
+  });
+
+  updateQuarterTable(branchQuarters, quarterInfo, selectedQuarters);
+}
+
+     function updateQuarterTable(branchQuarters, quarterInfo) {
+            const thead = document.getElementById('quarterTableHeader');
+            const tbody = document.getElementById('quarterTableBody');
+
+            thead.innerHTML = `
+<th style="text-align: left;">Branch</th>
+<th>Q1 (Lakhs)<br><span style="font-size: 0.75rem; font-weight: 400; opacity: 0.8;">${quarterInfo.q1.periodLabel}</span></th>
+<th>Q2 (Lakhs)<br><span style="font-size: 0.75rem; font-weight: 400; opacity: 0.8;">${quarterInfo.q2.periodLabel}</span></th>
+<th class="q3-col">Q3 (Lakhs) ${quarterInfo.q3.isPartial ? '⚠️' : ''}<br><span style="font-size: 0.75rem; font-weight: 400; opacity: 0.8;">${quarterInfo.q3.periodLabel}</span></th>
+<th class="q4-col">Q4 (Lakhs)<br><span style="font-size: 0.75rem; font-weight: 400; opacity: 0.8;">${quarterInfo.q4.periodLabel}</span></th>
+<th>Q1→Q2 Growth</th>
+<th class="q3-col">Q2→Q3 Growth</th>
+<th class="q4-col">Q3→Q4 Growth</th>
+            `;
+
+            tbody.innerHTML = '';
+
+            Object.entries(branchQuarters).forEach(([branch, quarters]) => {
+                const q1 = quarters.Q1 / 100000;
+                const q2 = quarters.Q2 / 100000;
+                const q3 = quarters.Q3 / 100000;
+                const q4 = quarters.Q4 / 100000;
+
+                const q1ToQ2Growth = q1 > 0 ? ((q2 - q1) / q1 * 100) : 0;
+                const q2ToQ3Growth = q2 > 0 ? ((q3 - q2) / q2 * 100) : 0;
+                const q3ToQ4Growth = q3 > 0 ? ((q4 - q3) / q3 * 100) : 0;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+<td>${branch}</td>
+<td><strong>${q1.toFixed(1)}</strong></td>
+<td><strong>${q2.toFixed(1)}</strong></td>
+<td class="q3-col"><strong>${q3.toFixed(1)}</strong></td>
+<td class="q4-col"><strong>${q4.toFixed(1)}</strong></td>
+<td>
+<span class="growth-badge ${q1ToQ2Growth >= 0 ? 'growth-positive' : 'growth-negative'}">
+                            ${q1ToQ2Growth > 0 ? '▲' : '▼'} ${Math.abs(q1ToQ2Growth).toFixed(1)}%
+</span>
+</td>
+<td class="q3-col">
+<span class="growth-badge ${q2ToQ3Growth >= 0 ? 'growth-positive' : 'growth-negative'}">
+                            ${q2ToQ3Growth > 0 ? '▲' : '▼'} ${Math.abs(q2ToQ3Growth).toFixed(1)}%
+</span>
+</td>
+<td class="q4-col">
+<span class="growth-badge ${q3ToQ4Growth >= 0 ? 'growth-positive' : 'growth-negative'}">
+                            ${q3ToQ4Growth > 0 ? '▲' : '▼'} ${Math.abs(q3ToQ4Growth).toFixed(1)}%
+</span>
+</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        function formatNumber(value) {
+            return new Intl.NumberFormat('en-IN').format(value);
+        }
+
+        window.addEventListener('load', loadData);
 </script>
+
 </body>
 </html>
