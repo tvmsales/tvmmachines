@@ -10,7 +10,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; padding: 10px; }
         .header { background: #161b22; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
-        .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 10px; background: #161b22; padding: 12px; border-radius: 8px; border: 1px solid #30363d; }
+        .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px; background: #161b22; padding: 12px; border-radius: 8px; border: 1px solid #30363d; }
         .drop-btn { width: 100%; padding: 8px; background: #21262d; color: white; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; text-align: left; font-size: 10px; font-weight: bold; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .drop-content { display: none; position: absolute; width: 250px; background: #161b22; border: 1px solid #58a6ff; z-index: 1000; max-height: 350px; overflow-y: auto; border-radius: 6px; margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); padding: 10px; }
         .search-box { width: 100%; padding: 6px; margin-bottom: 8px; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 11px; position: sticky; top: 0; }
@@ -22,7 +22,7 @@
         .val { font-size: 24px; display: block; font-weight: bold; }
         .blue { background: #1f6feb; } .green { background: #238636; } .purp { background: #8957e5; } .org { background: #da3633; }
         .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .chart-card { background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; height: 400px; overflow-y: auto; }
+        .chart-card { background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; height: 380px; overflow-y: auto; margin-bottom: 10px; }
         .chart-title { font-size: 11px; margin-bottom: 8px; color: #8b949e; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 4px; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; color: #c9d1d9; }
         th { text-align: left; background: #21262d; padding: 10px; border: 1px solid #30363d; color: #58a6ff; }
@@ -35,7 +35,7 @@
 
 <div class="header">
     <h3>TVM MACHINE ANALYTICS - MANAGEMENT DASHBOARD</h3>
-    <div style="font-size: 10px; color: #FFFAFA;">● VERSION 4.5 - FINAL MAPPING</div>
+    <div style="font-size: 10px; color: #FFFAFA;">● VERSION 4.6 - ADDITIONAL VISUALS</div>
 </div>
 
 <div class="filters">
@@ -57,10 +57,18 @@
 <div class="charts">
     <div class="chart-card"><div id="t_c1" class="chart-title">Visual 1</div><canvas id="c1"></canvas></div>
     <div class="chart-card"><div id="t_c2" class="chart-title">Visual 2</div><canvas id="c2"></canvas></div>
+    
+    <div class="chart-card"><div id="t_c4" class="chart-title">Top 10 Customer Group Description</div><canvas id="c4"></canvas></div>
     <div class="chart-card"><div id="t_c3" class="chart-title">Visual 3</div><canvas id="c3"></canvas></div>
+
     <div class="chart-card">
         <div class="chart-title">Branch Performance Summary (Tabular)</div>
         <div id="table-container"></div>
+    </div>
+    
+    <div class="chart-card">
+        <div class="chart-title">Dispatch Month wise Summary</div>
+        <div id="month-table-container"></div>
     </div>
 </div>
 
@@ -87,7 +95,6 @@ async function start() {
         Papa.parse(csvData, { 
             header: true, skipEmptyLines: true, 
             complete: function(r) {
-                // EXACT MAPPING BASED ON YOUR UPDATE
                 raw = r.data.map(row => ({
                     branch: (row['Branch'] || "").trim(),
                     party_name: (row['PARTY_NAME'] || "").trim(),
@@ -123,59 +130,45 @@ function setupFilter(id, key, isDate = false) {
 
 function sync() {
     const getChecked = (id) => Array.from(document.querySelectorAll(`#${id} .list input:checked`)).map(i => i.value);
-    
     const b = getChecked('b'), g = getChecked('g'), m = getChecked('m'), t = getChecked('t'), d = getChecked('d'), i = getChecked('i');
     
     filtered = raw.filter(r => 
-        b.includes(r.branch) && 
-        g.includes(r.grp_desc) &&
-        m.includes(r.im_descr) && 
-        t.includes(r.customer_type) && 
-        d.includes(r.dispatch_month) && 
-        i.includes(r.installation_month)
+        b.includes(r.branch) && g.includes(r.grp_desc) && m.includes(r.im_descr) && 
+        t.includes(r.customer_type) && d.includes(r.dispatch_month) && i.includes(r.installation_month)
     );
     update();
-}
-
-function toggle(id) {
-    const el = document.getElementById(id);
-    const isShown = el.classList.contains('show');
-    document.querySelectorAll('.drop-content').forEach(d => d.classList.remove('show'));
-    if(!isShown) el.classList.add('show');
-}
-
-function fList(id) {
-    const q = document.querySelector(`#${id} .search-box`).value.toLowerCase();
-    document.querySelectorAll(`#${id} .opt`).forEach(opt => {
-        opt.style.display = opt.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
-    });
-}
-
-function sAll(id, el) {
-    document.querySelectorAll(`#${id} .list input`).forEach(i => i.checked = el.checked);
-    sync();
 }
 
 function update() {
     let dSum = 0, iSum = 0, demoSum = 0, pSum = 0;
     const branchStats = {};
+    const monthStats = {};
 
     filtered.forEach(r => {
         const br = r.branch || "Other";
+        const mth = r.dispatch_month || "Unknown";
+        const val = r.grand_total;
+        
+        // Branch Logic
         if (!branchStats[br]) branchStats[br] = { disp: 0, inst: 0, pend: 0 };
+        branchStats[br].disp += val;
         
-        dSum += r.grand_total;
-        branchStats[br].disp += r.grand_total;
-        
-        const instMonth = (r.installation_month || "").toLowerCase();
-        if (instMonth !== "" && !instMonth.includes("not_entered")) {
-            iSum += r.grand_total;
-            branchStats[br].inst += r.grand_total;
+        // Month Logic
+        if (!monthStats[mth]) monthStats[mth] = { disp: 0, inst: 0, pend: 0 };
+        monthStats[mth].disp += val;
+
+        const isInst = r.installation_month && !r.installation_month.toLowerCase().includes("not_entered");
+        if (isInst) {
+            iSum += val;
+            branchStats[br].inst += val;
+            monthStats[mth].inst += val;
         } else {
-            pSum += r.grand_total;
-            branchStats[br].pend += r.grand_total;
+            pSum += val;
+            branchStats[br].pend += val;
+            monthStats[mth].pend += val;
         }
-        if (r.customer_type.toUpperCase().includes("DEMO")) demoSum += r.grand_total;
+        dSum += val;
+        if (r.customer_type.toUpperCase().includes("DEMO")) demoSum += val;
     });
 
     document.getElementById('k1').innerText = Math.round(dSum);
@@ -185,8 +178,23 @@ function update() {
 
     renderChart('c1', 'im_descr', 'Machine wise');
     renderChart('c2', 'party_name', 'Customer wise');
+    renderChart('c4', 'grp_desc', 'Customer Group wise');
     renderChart('c3', 'customer_type', 'Vertical Trends');
     renderTable(branchStats);
+    renderMonthTable(monthStats);
+}
+
+function renderMonthTable(data) {
+    const sorted = Object.keys(data).sort((a,b) => parseMonth(a) - parseMonth(b));
+    let html = `<table><thead><tr><th>Dispatch Month</th><th>Dispatched</th><th>Installed</th><th>Pending</th><th>Total</th></tr></thead><tbody>`;
+    let tD = 0, tI = 0, tP = 0, tT = 0;
+    sorted.forEach(m => {
+        const d = data[m];
+        tD += d.disp; tI += d.inst; tP += d.pend; tT += d.disp;
+        html += `<tr><td>${m}</td><td>${Math.round(d.disp)}</td><td>${Math.round(d.inst)}</td><td>${Math.round(d.pend)}</td><td>${Math.round(d.disp)}</td></tr>`;
+    });
+    html += `<tr class="t-total"><td>GRAND TOTAL</td><td>${Math.round(tD)}</td><td>${Math.round(tI)}</td><td>${Math.round(tP)}</td><td>${Math.round(tT)}</td></tr></tbody></table>`;
+    document.getElementById('month-table-container').innerHTML = html;
 }
 
 function renderTable(data) {
@@ -232,13 +240,33 @@ function renderChart(canvasId, rowKey, title) {
         }
     });
 }
-start();
+
+function toggle(id) {
+    const el = document.getElementById(id);
+    const isShown = el.classList.contains('show');
+    document.querySelectorAll('.drop-content').forEach(d => d.classList.remove('show'));
+    if(!isShown) el.classList.add('show');
+}
+
+function fList(id) {
+    const q = document.querySelector(`#${id} .search-box`).value.toLowerCase();
+    document.querySelectorAll(`#${id} .opt`).forEach(opt => {
+        opt.style.display = opt.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
+    });
+}
+
+function sAll(id, el) {
+    document.querySelectorAll(`#${id} .list input`).forEach(i => i.checked = el.checked);
+    sync();
+}
 
 window.onclick = function(e) {
     if (!e.target.matches('.drop-btn') && !e.target.closest('.drop-content')) {
         document.querySelectorAll('.drop-content').forEach(d => d.classList.remove('show'));
     }
 }
+
+start();
 </script>
 </body>
 </html>
