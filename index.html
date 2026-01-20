@@ -17,7 +17,6 @@
         .select-all-wrap { padding: 6px; border-bottom: 1px solid #30363d; margin-bottom: 5px; font-weight: bold; color: #58a6ff; font-size: 11px; }
         .show { display: block; }
         .opt { padding: 6px; border-bottom: 1px solid #21262d; display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer; }
-        .opt:hover { background: #1f6feb; }
         .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
         .card { padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
         .val { font-size: 24px; display: block; font-weight: bold; }
@@ -36,14 +35,12 @@
 
 <div class="header">
     <h3>TVM MACHINE ANALYTICS - MANAGEMENT DASHBOARD</h3>
-    <div style="font-size: 10px; color: #FFFAFA;">● VERSION 4.1 - By Prasad K</div>
+    <div style="font-size: 10px; color: #FFFAFA;">● VERSION 4.2 - FIXED FILTERS</div>
 </div>
 
 <div class="filters">
     <div style="position:relative"><button class="drop-btn" onclick="toggle('b')">BRANCH ▼</button><div id="b" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('b')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('b', this)"> SELECT ALL</div><div class="list"></div></div></div>
-    
-    <div style="position:relative"><button class="drop-btn" onclick="toggle('g')">CUSTOMER GROUP DESCRIPTION ▼</button><div id="g" class="drop-content"><input type="text" class="search-box" placeholder="Search Group..." onkeyup="fList('g')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('g', this)"> SELECT ALL</div><div class="list"></div></div></div>
-    
+    <div style="position:relative"><button class="drop-btn" onclick="toggle('g')">CUSTOMER GROUP DESCRIPTION ▼</button><div id="g" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('g')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('g', this)"> SELECT ALL</div><div class="list"></div></div></div>
     <div style="position:relative"><button class="drop-btn" onclick="toggle('m')">MACHINE ▼</button><div id="m" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('m')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('m', this)"> SELECT ALL</div><div class="list"></div></div></div>
     <div style="position:relative"><button class="drop-btn" onclick="toggle('t')">CUST. TYPE ▼</button><div id="t" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('t')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('t', this)"> SELECT ALL</div><div class="list"></div></div></div>
     <div style="position:relative"><button class="drop-btn" onclick="toggle('d')">DISPATCH ▼</button><div id="d" class="drop-content"><input type="text" class="search-box" placeholder="Search..." onkeyup="fList('d')"><div class="select-all-wrap"><input type="checkbox" checked onclick="sAll('d', this)"> SELECT ALL</div><div class="list"></div></div></div>
@@ -74,51 +71,56 @@ let raw = [], filtered = [], charts = {}, branchColors = {
 };
 
 function parseMonth(s) {
-    if(!s || s.toLowerCase().includes("not_entered")) return new Date(2099, 0);
+    if(!s || typeof s !== 'string' || s.toLowerCase().includes("not_entered")) return new Date(2099, 0);
     const months = {jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11};
-    const m = s.substring(0,3).toLowerCase();
-    const yStr = s.substring(s.length - 2);
-    const y = parseInt("20" + yStr);
+    const parts = s.split('-');
+    if(parts.length < 2) return new Date(2099, 0);
+    const m = parts[0].toLowerCase().substring(0,3);
+    const y = parseInt("20" + parts[parts.length-1]);
     return new Date(y, months[m] || 0);
 }
 
 async function start() {
-    const res = await fetch('https://raw.githubusercontent.com/tvmsales/tvmmachines/main/TVMMACHINES.csv');
-    const csv = await res.text();
-    Papa.parse(csv, { header: true, skipEmptyLines: true, complete: function(r) {
-        raw = r.data.map(row => {
-            const cleanRow = {};
-            Object.keys(row).forEach(key => {
-                const k = key.trim().toLowerCase();
-                const val = row[key] ? row[key].trim() : "";
-                if (k === "branch") cleanRow.branch = val;
-                if (k === "party_name") cleanRow.party_name = val;
-                if (k.includes("im_descr")) cleanRow.im_descr = val;
-                if (k.includes("customer_type")) cleanRow.customer_type = val;
-                if (k.includes("dispatch month")) cleanRow.dispatch_month = val;
-                if (k.includes("installation_month")) cleanRow.installation_month = val;
-                if (k.includes("grp_desc")) cleanRow.grp_desc = val;
-                if (k.includes("grand_total") || k === "grand total") cleanRow.grand_total = parseFloat(val) || 0;
-            });
-            return cleanRow;
-        }).filter(x => x.branch && !/total/i.test(x.branch));
-        
-        setupFilter('b', 'branch');
-        setupFilter('g', 'grp_desc');
-        setupFilter('m', 'im_descr');
-        setupFilter('t', 'customer_type');
-        setupFilter('d', 'dispatch_month', true);
-        setupFilter('i', 'installation_month', true);
-        sync();
-    }});
+    try {
+        const res = await fetch('https://raw.githubusercontent.com/tvmsales/tvmmachines/main/TVMMACHINES.csv');
+        const csv = await res.text();
+        Papa.parse(csv, { header: true, skipEmptyLines: true, complete: function(r) {
+            raw = r.data.map(row => {
+                const cleanRow = {};
+                Object.keys(row).forEach(key => {
+                    const k = key.trim().toLowerCase();
+                    const val = row[key] ? row[key].trim() : "";
+                    if (k === "branch") cleanRow.branch = val;
+                    if (k === "party_name") cleanRow.party_name = val;
+                    if (k.includes("im_descr")) cleanRow.im_descr = val;
+                    if (k.includes("customer_type")) cleanRow.customer_type = val;
+                    if (k.includes("dispatch month")) cleanRow.dispatch_month = val;
+                    if (k.includes("installation_month")) cleanRow.installation_month = val;
+                    if (k.includes("grp_desc")) cleanRow.grp_desc = val;
+                    if (k.includes("grand_total") || k === "grand total") cleanRow.grand_total = parseFloat(val) || 0;
+                });
+                return cleanRow;
+            }).filter(x => x.branch && !/total/i.test(x.branch));
+            
+            setupFilter('b', 'branch');
+            setupFilter('g', 'grp_desc');
+            setupFilter('m', 'im_descr');
+            setupFilter('t', 'customer_type');
+            setupFilter('d', 'dispatch_month', true);
+            setupFilter('i', 'installation_month', true);
+            sync();
+        }});
+    } catch(e) { console.error("Load failed", e); }
 }
 
 function setupFilter(id, key, isDate = false) {
-    let vals = [...new Set(raw.map(x => x[key]).filter(v => v !== ''))];
+    let vals = [...new Set(raw.map(x => x[key]).filter(v => v))];
     if (isDate) vals.sort((a, b) => parseMonth(a) - parseMonth(b)); else vals.sort();
     const container = document.querySelector(`#${id} .list`);
     container.innerHTML = "";
-    vals.forEach(v => { container.innerHTML += `<div class="opt"><input type="checkbox" value="${v}" checked onchange="sync()"> ${v}</div>`; });
+    vals.forEach(v => {
+        container.innerHTML += `<div class="opt"><input type="checkbox" value="${v}" checked onchange="sync()"> ${v}</div>`;
+    });
 }
 
 function sAll(id, el) {
@@ -128,16 +130,18 @@ function sAll(id, el) {
 
 function fList(id) {
     const q = document.querySelector(`#${id} .search-box`).value.toLowerCase();
-    document.querySelectorAll(`#${id} .opt`).forEach(opt => { opt.style.display = opt.innerText.toLowerCase().includes(q) ? 'flex' : 'none'; });
+    document.querySelectorAll(`#${id} .opt`).forEach(opt => {
+        opt.style.display = opt.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
+    });
 }
 
 function sync() {
-    const get = (id) => Array.from(document.querySelectorAll(`#${id} .list input:checked`)).map(i => i.value);
-    const [b, g, m, t, d, i] = ['b', 'g', 'm', 't', 'd', 'i'].map(get);
+    const getChecked = (id) => Array.from(document.querySelectorAll(`#${id} .list input:checked`)).map(i => i.value);
+    const b = getChecked('b'), g = getChecked('g'), m = getChecked('m'), t = getChecked('t'), d = getChecked('d'), i = getChecked('i');
     
     filtered = raw.filter(r => 
         b.includes(r.branch) && 
-        (r.grp_desc ? g.includes(r.grp_desc) : true) &&
+        (g.length === 0 || g.includes(r.grp_desc)) &&
         m.includes(r.im_descr) && 
         t.includes(r.customer_type) && 
         d.includes(r.dispatch_month) && 
@@ -166,13 +170,10 @@ function update() {
         if (!branchStats[br]) branchStats[br] = { disp: 0, inst: 0, pend: 0 };
         branchStats[br].disp += val;
 
-        const isI = im !== "" && !im.includes("not_entered");
-        if (isI) {
-            iSum += val;
-            branchStats[br].inst += val;
+        if (im !== "" && !im.includes("not_entered")) {
+            iSum += val; branchStats[br].inst += val;
         } else {
-            pSum += val;
-            branchStats[br].pend += val;
+            pSum += val; branchStats[br].pend += val;
         }
         if ((r.customer_type || "").toUpperCase().includes("DEMO")) demoSum += val;
     });
@@ -190,33 +191,27 @@ function update() {
 
 function renderTable(data) {
     const sortedBranches = Object.keys(data).sort();
-    let html = `<table><thead><tr><th>Branch Name</th><th>Dispatched</th><th>Installed</th><th>Pending</th></tr></thead><tbody>`;
+    let html = `<table><thead><tr><th>Branch</th><th>Dispatched</th><th>Installed</th><th>Pending</th></tr></thead><tbody>`;
     let tD = 0, tI = 0, tP = 0;
-
     sortedBranches.forEach(b => {
         const d = data[b];
         tD += d.disp; tI += d.inst; tP += d.pend;
         html += `<tr><td>${b}</td><td>${Math.round(d.disp)}</td><td>${Math.round(d.inst)}</td><td>${Math.round(d.pend)}</td></tr>`;
     });
-
-    html += `<tr class="t-total"><td>GRAND TOTAL</td><td>${Math.round(tD)}</td><td>${Math.round(tI)}</td><td>${Math.round(tP)}</td></tr>`;
-    html += `</tbody></table>`;
+    html += `<tr class="t-total"><td>GRAND TOTAL</td><td>${Math.round(tD)}</td><td>${Math.round(tI)}</td><td>${Math.round(tP)}</td></tr></tbody></table>`;
     document.getElementById('table-container').innerHTML = html;
 }
 
-function renderChart(canvasId, rowKey, baseTitle) {
-    const selectedBranches = Array.from(document.querySelectorAll('#b .list input:checked')).map(i => i.value).sort();
-    const rowTotals = {};
-    filtered.forEach(r => {
-        const key = r[rowKey];
-        if (key) rowTotals[key] = (rowTotals[key] || 0) + r.grand_total;
-    });
-    const activeRows = Object.keys(rowTotals).sort((a, b) => rowTotals[b] - rowTotals[a]).slice(0, 10);
-    document.getElementById('t_' + canvasId).innerText = `Top ${activeRows.length} ${baseTitle}`;
+function renderChart(canvasId, rowKey, title) {
+    const branches = Array.from(document.querySelectorAll('#b .list input:checked')).map(i => i.value).sort();
+    const totals = {};
+    filtered.forEach(r => { if(r[rowKey]) totals[r[rowKey]] = (totals[r[rowKey]] || 0) + r.grand_total; });
+    const rows = Object.keys(totals).sort((a,b) => totals[b]-totals[a]).slice(0,10);
+    document.getElementById('t_'+canvasId).innerText = "Top " + rows.length + " " + title;
 
-    const datasets = selectedBranches.map(br => ({
+    const ds = branches.map(br => ({
         label: br,
-        data: activeRows.map(row => filtered.filter(r => r[rowKey] === row && r.branch === br).reduce((s, c) => s + c.grand_total, 0)),
+        data: rows.map(row => filtered.filter(r => r[rowKey] === row && r.branch === br).reduce((s,c) => s+c.grand_total, 0)),
         backgroundColor: branchColors[br] || '#58a6ff'
     }));
 
@@ -224,22 +219,21 @@ function renderChart(canvasId, rowKey, baseTitle) {
     if(charts[canvasId]) charts[canvasId].destroy();
     charts[canvasId] = new Chart(ctx, {
         type: 'bar',
-        data: { labels: activeRows, datasets: datasets },
+        data: { labels: rows, datasets: ds },
         options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top', labels: { boxWidth: 8, color: '#8b949e', font: { size: 9 } } },
-                datalabels: { color: '#fff', font: { weight: 'bold', size: 9 }, formatter: (v) => v > 0 ? Math.round(v) : '' }
+            plugins: { 
+                legend: { display: true, position: 'top', labels: { color: '#8b949e', font: { size: 9 } } },
+                datalabels: { color: '#fff', font: { size: 9 }, formatter: v => v > 0 ? Math.round(v) : '' }
             },
             scales: {
-                x: { stacked: true, ticks: { color: '#8b949e', font: { size: 9 } }, grid: { color: '#30363d' } },
-                y: { stacked: true, ticks: { color: '#8b949e', font: { size: 9 } }, grid: { display: false } }
+                x: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+                y: { stacked: true, ticks: { color: '#8b949e' } }
             }
         }
     });
 }
 start();
-
 window.onclick = function(e) {
     if (!e.target.matches('.drop-btn') && !e.target.closest('.drop-content')) {
         document.querySelectorAll('.drop-content').forEach(d => d.classList.remove('show'));
