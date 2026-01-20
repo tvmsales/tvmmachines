@@ -35,7 +35,7 @@
 
 <div class="header">
     <h3>TVM MACHINE ANALYTICS - MANAGEMENT DASHBOARD</h3>
-    <div style="font-size: 10px; color: #FFFAFA;">● VERSION 4.6 - ADDITIONAL VISUALS</div>
+    <div style="font-size: 10px; color: #FFFAFA;">● VERSION 4.9 - TOTAL LABELS OPTIMIZED</div>
 </div>
 
 <div class="filters">
@@ -57,23 +57,45 @@
 <div class="charts">
     <div class="chart-card"><div id="t_c1" class="chart-title">Visual 1</div><canvas id="c1"></canvas></div>
     <div class="chart-card"><div id="t_c2" class="chart-title">Visual 2</div><canvas id="c2"></canvas></div>
-    
     <div class="chart-card"><div id="t_c4" class="chart-title">Top 10 Customer Group Description</div><canvas id="c4"></canvas></div>
     <div class="chart-card"><div id="t_c3" class="chart-title">Visual 3</div><canvas id="c3"></canvas></div>
-
-    <div class="chart-card">
-        <div class="chart-title">Branch Performance Summary (Tabular)</div>
-        <div id="table-container"></div>
-    </div>
-    
-    <div class="chart-card">
-        <div class="chart-title">Dispatch Month wise Summary</div>
-        <div id="month-table-container"></div>
-    </div>
+    <div class="chart-card"><div class="chart-title">Branch Performance Summary (Tabular)</div><div id="table-container"></div></div>
+    <div class="chart-card"><div class="chart-title">Dispatch Month wise Summary</div><div id="month-table-container"></div></div>
 </div>
 
 <script>
 Chart.register(ChartDataLabels);
+
+// REFINED PLUGIN: Shows Total at the end of the bar with high visibility
+const stackLabels = {
+    id: 'stackLabels',
+    afterDatasetsDraw(chart) {
+        const { ctx, data } = chart;
+        ctx.save();
+        ctx.font = 'bold 11px Arial';
+        ctx.fillStyle = '#00ffff'; // BRIGHT CYAN FOR TOTALS
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+
+        // Calculate the total for each label (row)
+        const rowTotals = data.labels.map((_, i) => 
+            data.datasets.reduce((sum, ds) => sum + (ds.data[i] || 0), 0)
+        );
+
+        // Get coordinates of the last visible dataset to place the text
+        const lastMeta = chart.getDatasetMeta(data.datasets.length - 1);
+        
+        lastMeta.data.forEach((datapoint, index) => {
+            const total = Math.round(rowTotals[index]);
+            if (total > 0) {
+                // Offset by 8px from the end of the bar for clarity
+                ctx.fillText(total, datapoint.x + 8, datapoint.y);
+            }
+        });
+        ctx.restore();
+    }
+};
+
 let raw = [], filtered = [], charts = {}, branchColors = { 
     'GJ':'#FF5733', 'KA':'#33FF57', 'MH':'#3357FF', 'TL':'#F333FF', 'TN':'#33FFF3', 'UP':'#FFF333', 'WB':'#FF3380' 
 };
@@ -131,7 +153,6 @@ function setupFilter(id, key, isDate = false) {
 function sync() {
     const getChecked = (id) => Array.from(document.querySelectorAll(`#${id} .list input:checked`)).map(i => i.value);
     const b = getChecked('b'), g = getChecked('g'), m = getChecked('m'), t = getChecked('t'), d = getChecked('d'), i = getChecked('i');
-    
     filtered = raw.filter(r => 
         b.includes(r.branch) && g.includes(r.grp_desc) && m.includes(r.im_descr) && 
         t.includes(r.customer_type) && d.includes(r.dispatch_month) && i.includes(r.installation_month)
@@ -141,31 +162,19 @@ function sync() {
 
 function update() {
     let dSum = 0, iSum = 0, demoSum = 0, pSum = 0;
-    const branchStats = {};
-    const monthStats = {};
+    const branchStats = {}, monthStats = {};
 
     filtered.forEach(r => {
-        const br = r.branch || "Other";
-        const mth = r.dispatch_month || "Unknown";
-        const val = r.grand_total;
-        
-        // Branch Logic
+        const br = r.branch || "Other", mth = r.dispatch_month || "Unknown", val = r.grand_total;
         if (!branchStats[br]) branchStats[br] = { disp: 0, inst: 0, pend: 0 };
         branchStats[br].disp += val;
-        
-        // Month Logic
         if (!monthStats[mth]) monthStats[mth] = { disp: 0, inst: 0, pend: 0 };
         monthStats[mth].disp += val;
-
         const isInst = r.installation_month && !r.installation_month.toLowerCase().includes("not_entered");
         if (isInst) {
-            iSum += val;
-            branchStats[br].inst += val;
-            monthStats[mth].inst += val;
+            iSum += val; branchStats[br].inst += val; monthStats[mth].inst += val;
         } else {
-            pSum += val;
-            branchStats[br].pend += val;
-            monthStats[mth].pend += val;
+            pSum += val; branchStats[br].pend += val; monthStats[mth].pend += val;
         }
         dSum += val;
         if (r.customer_type.toUpperCase().includes("DEMO")) demoSum += val;
@@ -227,11 +236,17 @@ function renderChart(canvasId, rowKey, title) {
     charts[canvasId] = new Chart(ctx, {
         type: 'bar',
         data: { labels: rows, datasets: ds },
+        plugins: [stackLabels],
         options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            layout: { padding: { right: 40 } }, // Extra room for total labels
             plugins: { 
                 legend: { position: 'top', labels: { color: '#8b949e', font: { size: 9 } } },
-                datalabels: { color: '#fff', font: { size: 9 }, formatter: v => v > 0 ? Math.round(v) : '' }
+                datalabels: { 
+                    color: '#000000', // INSIDE BAR NUMBERS BLACK
+                    font: { size: 9, weight: 'bold' }, 
+                    formatter: v => v > 0 ? Math.round(v) : '' 
+                }
             },
             scales: {
                 x: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
@@ -265,7 +280,6 @@ window.onclick = function(e) {
         document.querySelectorAll('.drop-content').forEach(d => d.classList.remove('show'));
     }
 }
-
 start();
 </script>
 </body>
