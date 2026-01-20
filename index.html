@@ -35,7 +35,7 @@
 
 <div class="header">
     <h3>TVM MACHINE ANALYTICS - MANAGEMENT DASHBOARD</h3>
-    <div style="font-size: 10px; color: #FFFAFA;">● VERSION 4.3 - FINAL FIX</div>
+    <div style="font-size: 10px; color: #FFFAFA;">● VERSION 4.5 - FINAL MAPPING</div>
 </div>
 
 <div class="filters">
@@ -74,42 +74,45 @@ function parseMonth(s) {
     if(!s || typeof s !== 'string' || s.toLowerCase().includes("not_entered")) return new Date(2099, 0);
     const months = {jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11};
     const parts = s.split('-');
+    if (parts.length < 2) return new Date(2099, 0);
     const m = parts[0].toLowerCase().substring(0,3);
     const y = parseInt("20" + parts[parts.length-1]);
     return new Date(y, months[m] || 0);
 }
 
 async function start() {
-    const res = await fetch('https://raw.githubusercontent.com/tvmsales/tvmmachines/main/TVMMACHINES.csv');
-    const csvData = await res.text();
-    Papa.parse(csvData, { 
-        header: true, 
-        skipEmptyLines: true, 
-        complete: function(r) {
-            raw = r.data.map(row => ({
-                branch: (row['Branch'] || "").trim(),
-                party_name: (row['PARTY_NAME'] || "").trim(),
-                im_descr: (row['IM_DESCR'] || "").trim(),
-                customer_type: (row['Customer_Type'] || "").trim(),
-                dispatch_month: (row['Dispatch Month'] || "").trim(), // Matching Space exactly
-                installation_month: (row['Installation_Month'] || "").trim(), // Matching underscore
-                grp_desc: (row['GRP_DESC'] || "").trim(),
-                grand_total: parseFloat(row['Grand Total']) || 0
-            })).filter(x => x.branch && !/total/i.test(x.branch));
-            
-            setupFilter('b', 'branch');
-            setupFilter('g', 'grp_desc');
-            setupFilter('m', 'im_descr');
-            setupFilter('t', 'customer_type');
-            setupFilter('d', 'dispatch_month', true);
-            setupFilter('i', 'installation_month', true);
-            sync();
-        }
-    });
+    try {
+        const res = await fetch('https://raw.githubusercontent.com/tvmsales/tvmmachines/main/TVMMACHINES.csv');
+        const csvData = await res.text();
+        Papa.parse(csvData, { 
+            header: true, skipEmptyLines: true, 
+            complete: function(r) {
+                // EXACT MAPPING BASED ON YOUR UPDATE
+                raw = r.data.map(row => ({
+                    branch: (row['Branch'] || "").trim(),
+                    party_name: (row['PARTY_NAME'] || "").trim(),
+                    im_descr: (row['IM_DESCR'] || "").trim(),
+                    customer_type: (row['Customer_Type'] || "").trim(),
+                    dispatch_month: (row['DispatchMonth'] || "").trim(),
+                    installation_month: (row['Installation_Month'] || "").trim(),
+                    grp_desc: (row['GRP_DESC'] || "").trim(),
+                    grand_total: parseFloat(row['Grand Total']) || 0
+                })).filter(x => x.branch && !/total/i.test(x.branch));
+                
+                setupFilter('b', 'branch');
+                setupFilter('g', 'grp_desc');
+                setupFilter('m', 'im_descr');
+                setupFilter('t', 'customer_type');
+                setupFilter('d', 'dispatch_month', true);
+                setupFilter('i', 'installation_month', true);
+                sync();
+            }
+        });
+    } catch(e) { console.error("CSV Load Error:", e); }
 }
 
 function setupFilter(id, key, isDate = false) {
-    let vals = [...new Set(raw.map(x => x[key]).filter(v => v))];
+    let vals = [...new Set(raw.map(x => x[key]).filter(v => v !== undefined && v !== ""))];
     if (isDate) vals.sort((a, b) => parseMonth(a) - parseMonth(b)); else vals.sort();
     const container = document.querySelector(`#${id} .list`);
     container.innerHTML = "";
@@ -120,11 +123,12 @@ function setupFilter(id, key, isDate = false) {
 
 function sync() {
     const getChecked = (id) => Array.from(document.querySelectorAll(`#${id} .list input:checked`)).map(i => i.value);
+    
     const b = getChecked('b'), g = getChecked('g'), m = getChecked('m'), t = getChecked('t'), d = getChecked('d'), i = getChecked('i');
     
     filtered = raw.filter(r => 
         b.includes(r.branch) && 
-        (g.length === 0 || g.includes(r.grp_desc)) &&
+        g.includes(r.grp_desc) &&
         m.includes(r.im_descr) && 
         t.includes(r.customer_type) && 
         d.includes(r.dispatch_month) && 
@@ -157,13 +161,14 @@ function update() {
     const branchStats = {};
 
     filtered.forEach(r => {
-        const br = r.branch;
+        const br = r.branch || "Other";
         if (!branchStats[br]) branchStats[br] = { disp: 0, inst: 0, pend: 0 };
         
         dSum += r.grand_total;
         branchStats[br].disp += r.grand_total;
-
-        if (r.installation_month && !r.installation_month.toLowerCase().includes("not_entered")) {
+        
+        const instMonth = (r.installation_month || "").toLowerCase();
+        if (instMonth !== "" && !instMonth.includes("not_entered")) {
             iSum += r.grand_total;
             branchStats[br].inst += r.grand_total;
         } else {
